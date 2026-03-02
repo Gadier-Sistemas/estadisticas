@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | GADIER Sistemas</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/login.css">
+</head>
+
+<body>
+    <div class="login-wrapper">
+        <div class="login-visual">
+            <div class="visual-overlay"></div>
+            <div class="visual-content">
+                <!-- Main logo handled via CSS background -->
+            </div>
+        </div>
+        <div class="login-form-container">
+            <div class="login-card">
+                <div class="login-header">
+                    <h1>¡Hola de nuevo!</h1>
+                    <p class="subtitle">Ingresa a tu cuenta para continuar</p>
+                </div>
+
+                <form id="loginForm" onsubmit="handleLogin(event)">
+                    <div class="form-group">
+                        <label for="username">Nombre de Usuario</label>
+                        <div class="input-wrapper">
+                            <span class="input-icon">👤</span>
+                            <input type="text" id="username" placeholder="Tu usuario" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password">Contraseña</label>
+                        <div class="input-wrapper">
+                            <span class="input-icon">🔒</span>
+                            <input type="password" id="password" placeholder="••••••••" required>
+                        </div>
+                    </div>
+
+                    <div class="form-options">
+                        <label class="remember-me">
+                            <input type="checkbox"> Recordarme
+                        </label>
+                        <a href="#" class="forgot-link">¿Olvidaste tu contraseña?</a>
+                    </div>
+
+                    <div id="errorMessage" class="error-message" style="display: none;"></div>
+
+                    <button type="submit" class="btn-login">
+                        Siguiente <span>→</span>
+                    </button>
+
+                    <p class="contact-admin">¿No tienes cuenta? Contacta al administrador</p>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load Auth Module -->
+    <script src="js/components/auth.js"></script>
+    <script>
+        // Check if already logged in
+        if (sessionStorage.getItem('isAuthenticated')) {
+            window.location.href = 'index.html';
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const errorDiv = document.getElementById('errorMessage');
+            const btn = document.querySelector('.btn-login');
+
+            // Estado de carga
+            const originalBtnContent = btn.innerHTML;
+            btn.innerHTML = '⌛ Validando...';
+            btn.disabled = true;
+            errorDiv.style.display = 'none';
+
+            try {
+                // Usar funcionalidad asíncrona de auth.js
+                const result = await login(username, password);
+
+                if (result.success) {
+                    // Feedback visual de éxito
+                    btn.innerHTML = '✅ ¡Bienvenido!';
+                    btn.style.background = '#2e7d32'; // Verde premium
+
+                    // Redirección
+                    setTimeout(() => {
+                        window.location.href = 'index.html';
+                    }, 800);
+                } else {
+                    errorDiv.textContent = result.error;
+                    errorDiv.style.display = 'block';
+
+                    // Restaurar botón
+                    btn.innerHTML = originalBtnContent;
+                    btn.disabled = false;
+
+                    // Animación de error
+                    const card = document.querySelector('.login-card');
+                    card.classList.add('shake');
+                    setTimeout(() => card.classList.remove('shake'), 500);
+                }
+            } catch (error) {
+                errorDiv.textContent = 'Ocurrió un error inesperado al conectar con el servidor.';
+                errorDiv.style.display = 'block';
+                btn.innerHTML = originalBtnContent;
+                btn.disabled = false;
+            }
+        }
+    </script>
+</body>
+
+</html>

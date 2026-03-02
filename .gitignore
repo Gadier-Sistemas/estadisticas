@@ -1,0 +1,29 @@
+# Root .gitignore
+/backend/.env
+/backend/vendor/
+/backend/node_modules/
+/backend/public/storage
+/backend/storage/*.key
+/backend/storage/framework/cache/data/*
+/backend/storage/framework/sessions/*
+/backend/storage/framework/views/*
+/backend/storage/logs/*
+/backend/.phpunit.result.cache
+/backend/.phpunit.cache/
+/backend/.vscode/
+/backend/auth.json
+/backend/public/build
+/backend/public/hot
+/backend/public/storage
+/backend/Homestead.json
+/backend/Homestead.yaml
+
+# Frontend
+/frontend/node_modules/
+/frontend/.vscode/
+
+# System Files
+.DS_Store
+Thumbs.db
+*.log
+/temp_recovery/
