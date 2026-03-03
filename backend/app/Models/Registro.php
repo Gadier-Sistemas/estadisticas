@@ -9,6 +9,7 @@ class Registro extends Model
     protected $fillable = [
         'user_id',
         'proceso_codigo',
+        'proyecto_id',
         'fecha',
         'cliente',
         'cantidad',
@@ -21,6 +22,11 @@ class Registro extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function proyecto()
+    {
+        return $this->belongsTo(Proyecto::class);
     }
 
     public function proceso()

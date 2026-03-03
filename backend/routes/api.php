@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ProcesoController;
 use App\Http\Controllers\Api\RegistroController;
+use App\Http\Controllers\Api\ProyectoController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\UserController;
 use Illuminate\Http\Request;
@@ -26,6 +27,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Procesos
         Route::get('/procesos', [ProcesoController::class , 'index']);
+
+        // Proyectos
+        Route::get('/proyectos', [ProyectoController::class , 'index']);
 
         // Registros
         Route::get('/registros', [RegistroController::class , 'index']);

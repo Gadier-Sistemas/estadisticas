@@ -186,11 +186,14 @@ function loadRegistroModule() {
                         <!-- Production Fields (Wrapped for toggling) -->
                         <div id="productionFields" style="display: contents;">
                             <div class="form-group full-width">
-                                <label for="cliente">Cliente</label>
-                                <input type="text" id="cliente" list="clientesList" placeholder="Escriba o seleccione un cliente..." required>
-                                <datalist id="clientesList">
-                                    ${(sampleData.customers || []).map(c => `<option value="${c}">`).join('')}
-                                </datalist>
+                                <label for="proyecto">Proyecto / Cliente</label>
+                                <select id="proyecto" required onchange="handleProjectChange(this.value)">
+                                    <option value="">Seleccionar proyecto...</option>
+                                    ${(sampleData.projects || []).map(p => `
+                                        <option value="${p.id}">${p.nombre} (${p.cliente})</option>
+                                    `).join('')}
+                                </select>
+                                <input type="hidden" id="cliente" value="">
                             </div>
 
                             <div class="form-group">
@@ -529,40 +532,46 @@ function updateTotalQuantity() {
 }
 
 async function handleRegistroSubmit() {
-    // 1. Identify Operator reliably
+    // 1. Common Fields
     const user = getCurrentUser();
     const isOperario = user && user.rol === 'operario';
+    const operarioId = isOperario ? user.id : document.getElementById('operario').value;
+    const proyectoId = document.getElementById('proyecto')?.value;
+    const fecha = document.getElementById('fecha').value;
+    const observaciones = document.getElementById('observaciones').value;
+    const isFullAbsence = document.getElementById('fullAbsenceToggle')?.checked;
 
-    let operarioId = null;
-    if (isOperario) {
-        operarioId = user.id; // Use ID from session directly
-    } else {
-        const operarioSelect = document.getElementById('operario');
-        operarioId = operarioSelect ? operarioSelect.value : null;
+    if (!operarioId) {
+        showToast('❌ Error: No se pudo identificar al operario', 'error');
+        return;
     }
 
-    const fullAbsenceToggle = document.getElementById('fullAbsenceToggle');
-    const isFullAbsence = fullAbsenceToggle ? fullAbsenceToggle.checked : false;
-    const selectedFecha = document.getElementById('fecha') ? document.getElementById('fecha').value : 'No hay campo fecha';
-
-    console.log('🚀 Iniciando GUARDADO de registro:');
-    console.log('👤 Usuario Sesión:', user?.name, '(ID:', user?.id, 'Rol:', user?.rol, ')');
-    console.log('🆔 Operario ID Identificado para el registro:', operarioId);
-    console.log('📅 Fecha seleccionada:', selectedFecha);
-    console.log('🚫 ¿Es ausencia total?:', isFullAbsence);
+    if (!proyectoId && !isFullAbsence) {
+        showToast('⚠️ Seleccione un Proyecto', 'warning');
+        return;
+    }
 
     const noveltyTypeElement = document.getElementById('noveltyType');
     const noveltyType = noveltyTypeElement ? noveltyTypeElement.value : null;
     const fileInput = document.getElementById('noveltyFile');
     const fileName = (fileInput && fileInput.files.length > 0) ? fileInput.files[0].name : null;
 
-    if (!operarioId) {
-        console.error('❌ Error Crítico: No se encontró operarioId. User:', user);
-        showToast('❌ Error: No se pudo identificar al operario', 'error');
-        return;
-    }
+    let formData = {
+        userId: parseInt(operarioId),
+        proyecto_id: proyectoId ? parseInt(proyectoId) : null,
+        fecha: fecha,
+        observaciones: observaciones,
+        cliente: document.getElementById('cliente').value
+    };
 
-    let formData = {};
+    console.log('🚀 Iniciando GUARDADO de registro:');
+    console.log('👤 Usuario Sesión:', user?.name, '(ID:', user?.id, 'Rol:', user?.rol, ')');
+    console.log('🆔 Operario ID Identificado para el registro:', operarioId);
+    console.log('📅 Fecha seleccionada:', fecha);
+    console.log('🚫 ¿Es ausencia total?:', isFullAbsence);
+    console.log('🆔 Proyecto ID:', proyectoId);
+    console.log('📝 Cliente (del proyecto):', formData.cliente);
+
 
     if (isFullAbsence) {
         // Validate Novelty
@@ -573,21 +582,18 @@ async function handleRegistroSubmit() {
 
         // For full absence, we use "NOVEDAD" or similar as client/code placeholder if strictly needed by UI, 
         // but type='novedad_total' should handle logic.
-        formData = {
-            userId: parseInt(operarioId),
-            fecha: document.getElementById('fecha').value,
-            cliente: 'NOVEDAD',
+        Object.assign(formData, {
+            cliente: 'NOVEDAD', // Override client for full absence
             codigo: 'NOV',
             subproceso: '-',
             cantidad: 0,
             tiempo: '0:00',
-            observaciones: document.getElementById('observaciones').value,
             type: 'novedad_total',
             novelty: {
                 type: noveltyType,
                 file: fileName
             }
-        };
+        });
 
     } else {
         // Normal Production Logic
@@ -619,10 +625,7 @@ async function handleRegistroSubmit() {
             subprocesoStr = "-";
         }
 
-        formData = {
-            userId: parseInt(operarioId),
-            fecha: document.getElementById('fecha').value,
-            cliente: document.getElementById('cliente').value,
+        Object.assign(formData, {
             codigo: processCode,
             subproceso: subprocesoStr,
             subprocesos_detalle: subprocesosDetalle,
@@ -630,10 +633,9 @@ async function handleRegistroSubmit() {
             tiempo: document.getElementById('tiempoCalculado').value,
             horaInicio: document.getElementById('horaInicio').value,
             horaFin: document.getElementById('horaFin').value,
-            observaciones: document.getElementById('observaciones').value,
             type: 'production',
             novelty: noveltyType ? { type: noveltyType, file: fileName } : null
-        };
+        });
     }
 
     console.log('📝 Preparando envío de datos:', formData);
@@ -647,6 +649,14 @@ async function handleRegistroSubmit() {
         }
     } else {
         console.error('saveRegistration function not found');
+    }
+}
+
+function handleProjectChange(projectId) {
+    const project = sampleData.projects.find(p => parseInt(p.id) === parseInt(projectId));
+    if (project) {
+        const clienteInput = document.getElementById('cliente');
+        if (clienteInput) clienteInput.value = project.cliente;
     }
 }
 
@@ -690,19 +700,19 @@ function clearRegistroForm() {
 }
 
 function calculateDuration() {
-    const inicio = document.getElementById('horaInicio').value;
-    const fin = document.getElementById('horaFin').value;
+    const inicio = document.getElementById('horaInicio');
+    const fin = document.getElementById('horaFin');
     const display = document.getElementById('durationDisplay');
     const calculatedSpan = document.getElementById('calculatedTime');
     const hiddenInput = document.getElementById('tiempoCalculado');
 
-    if (!inicio || !fin) {
+    if (!inicio.value || !fin.value) {
         if (display) display.style.display = 'none';
         return;
     }
 
-    const [h1, m1] = inicio.split(':').map(Number);
-    const [h2, m2] = fin.split(':').map(Number);
+    const [h1, m1] = inicio.value.split(':').map(Number);
+    const [h2, m2] = fin.value.split(':').map(Number);
 
     let totalMinutes = (h2 * 60 + m2) - (h1 * 60 + m1);
 

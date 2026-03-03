@@ -6,6 +6,7 @@ const sampleData = {
     },
     customers: ['GADIER', 'Cliente Externo', 'Empresas Unidas', 'Servicios Especiales'],
     processes: [], // Will be loaded from API
+    projects: [],  // Will be loaded from API
     registrations: [], // Will be loaded from API
 };
 
@@ -66,6 +67,18 @@ async function loadInitialData() {
         if (procResponse.ok) {
             sampleData.processes = await procResponse.json();
             console.log('✅ Procesos cargados:', sampleData.processes.length);
+        }
+
+        // Load Projects
+        const projResponse = await fetch(`${API_URL}/proyectos`, {
+            headers: {
+                'Authorization': `Bearer ${sessionStorage.getItem('authToken')}`,
+                'Accept': 'application/json'
+            }
+        });
+        if (projResponse.ok) {
+            sampleData.projects = await projResponse.json();
+            console.log('✅ Proyectos cargados:', sampleData.projects.length);
         }
 
         // Initial sync of registrations
@@ -393,7 +406,7 @@ function toggleUserMenu() {
         <div class="user-menu-header">
             <div class="user-avatar">${user.rol === 'superadmin' ? '👨‍💼' : '👤'}</div>
             <div class="user-info">
-                <strong>${user.name} ${user.apellido}</strong>
+                <strong>${user.name} ${user.lastname || user.apellido || ''}</strong>
                 <span class="user-role-badge role-${user.rol}">${user.rol === 'superadmin' ? 'Superadmin' : 'Operario'}</span>
             </div>
         </div>
@@ -408,8 +421,11 @@ function toggleUserMenu() {
             ` : ''}
         </div>
         <div class="user-menu-footer">
-            <button class="btn btn-sm" onclick="logout()" style="background: #990F0C; color: white; width: 100%;">
-                🚪 Cerrar Sesión
+            <button class="btn-logout" onclick="logout()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M17 16L21 12M21 12L17 8M21 12H9M13 16V17C13 18.6569 11.6569 20 10 20H5C3.34315 20 2 18.6569 2 17V7C2 5.34315 3.34315 4 5 4H10C11.6569 4 13 5.34315 13 7V8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Cerrar Sesión
             </button>
         </div>
     `;

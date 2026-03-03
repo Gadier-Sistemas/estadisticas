@@ -23,6 +23,14 @@ class DashboardController extends Controller
             'produccion_semanal' => Registro::select(DB::raw('DATE(fecha) as date'), DB::raw('SUM(cantidad) as total'))
             ->where('fecha', '>=', now()->subDays(7))
             ->groupBy('date')
+            ->get(),
+            // Production by Project (Top 5)
+            'produccion_por_proyecto' => DB::table('registros')
+            ->join('proyectos', 'registros.proyecto_id', '=', 'proyectos.id')
+            ->select('proyectos.nombre', DB::raw('SUM(registros.cantidad) as total'))
+            ->groupBy('proyectos.nombre')
+            ->orderByDesc('total')
+            ->limit(5)
             ->get()
         ];
 

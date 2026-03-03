@@ -22,16 +22,25 @@ class RegistroController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'proceso_id' => 'required|exists:procesos,id',
+            'user_id' => 'nullable|exists:users,id',
+            'proyecto_id' => 'required|exists:proyectos,id',
+            'proceso_codigo' => 'required|string',
             'fecha' => 'required|date',
             'cantidad' => 'required|integer',
             'tiempo' => 'required|string',
             'cliente' => 'nullable|string',
             'observaciones' => 'nullable|string',
+            'tipo' => 'nullable|string',
+            'novedad_tipo' => 'nullable|string',
         ]);
 
-        $registro = $request->user()->registrations()->create($validated);
+        // Si el usuario es admin, puede enviar un user_id manual. Si no, usamos el del token.
+        $userId = ($request->user()->rol === 'superadmin' && $request->has('user_id'))
+            ? $validated['user_id']
+            : $request->user()->id;
 
-        return response()->json($registro, 201);
+        $registro = Registro::create(array_merge($validated, ['user_id' => $userId]));
+
+        return response()->json($registro->load('proceso', 'proyecto'), 201);
     }
 }

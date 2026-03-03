@@ -262,6 +262,13 @@ h6 {
     border-top: 1px solid var(--gray-800);
 }
 
+/* Hide legacy profile elements in sidebar */
+.sidebar-footer .user-profile,
+.sidebar-footer #userProfile,
+.sidebar-footer .user-info {
+    display: none !important;
+}
+
 .version-info {
     display: flex;
     flex-direction: column;
@@ -511,4 +518,120 @@ h6 {
     .module-header h2 {
         font-size: var(--text-3xl);
     }
+}
+
+/* User Menu Panel - Premium Floating Design */
+.user-menu-panel {
+    position: fixed;
+    background: var(--bg-white);
+    border: 1px solid var(--border-medium);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-xl);
+    width: 280px;
+    z-index: 2000;
+    overflow: hidden;
+    animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.user-menu-header {
+    background: var(--bg-gray);
+    padding: var(--spacing-lg);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    border-bottom: 1px solid var(--border-light);
+}
+
+.user-avatar {
+    width: 48px;
+    height: 48px;
+    background: var(--corporate-red);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+}
+
+.user-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.user-info strong {
+    font-size: var(--text-base);
+    color: var(--text-primary);
+}
+
+.user-role-badge {
+    font-size: var(--text-xs);
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-weight: 600;
+    width: fit-content;
+    margin-top: 4px;
+}
+
+.role-superadmin {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.role-operario {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.user-menu-body {
+    padding: var(--spacing-md);
+}
+
+.user-menu-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
+    color: var(--text-secondary);
+    font-size: var(--text-sm);
+}
+
+.user-menu-footer {
+    padding: var(--spacing-md);
+    background: var(--gray-50);
+    border-top: 1px solid var(--border-light);
+}
+
+.btn-logout {
+    background: var(--corporate-red);
+    color: white;
+    border: none;
+    padding: var(--spacing-sm);
+    border-radius: var(--radius-md);
+    width: 100%;
+    cursor: pointer;
+    font-weight: 600;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: var(--text-sm);
+}
+
+.btn-logout:hover {
+    background: var(--corporate-red-hover);
+    box-shadow: var(--shadow-md);
 }
