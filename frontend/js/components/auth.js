@@ -1,5 +1,6 @@
-// Authentication & Session Management Module
-const API_URL = 'http://172.16.0.137:8000/api';
+const API_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+    ? 'http://127.0.0.1:8000/api'
+    : `http://${window.location.hostname}:8000/api`;
 
 // Mock current user (will be replaced with real backend authentication)
 let currentUser = {

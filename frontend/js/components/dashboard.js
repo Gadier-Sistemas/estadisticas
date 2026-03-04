@@ -304,6 +304,15 @@ function loadAdminDashboard() {
                     <p class="stat-label">Global esta semana</p>
                 </div>
             </div>
+
+            <div class="stat-card" id="rendimientoCard" style="border-left: 4px solid #6b7280;">
+                <div class="stat-icon">⏳</div>
+                <div class="stat-content">
+                    <h3>Rendimiento Hoy</h3>
+                    <div class="stat-value">—</div>
+                    <p class="stat-label">Cargando...</p>
+                </div>
+            </div>
         </div>
 
         <!-- Operators List -->
@@ -346,6 +355,49 @@ function loadAdminDashboard() {
     setTimeout(() => {
         initDashboardCharts();
     }, 100);
+
+    // Cargar rendimiento global desde API
+    loadRendimientoCard();
+}
+
+/**
+ * Carga el rendimiento global del día desde la API y actualiza la tarjeta.
+ */
+async function loadRendimientoCard() {
+    const card = document.getElementById('rendimientoCard');
+    if (!card) return;
+
+    try {
+        const token = sessionStorage.getItem('authToken');
+        const response = await fetch(`${API_URL}/dashboard/stats`, {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Accept': 'application/json'
+            }
+        });
+
+        if (!response.ok) return;
+
+        const stats = await response.json();
+        const rend = stats.rendimiento_hoy || { porcentaje: 0, semaforo: 'gris' };
+
+        const colors = { verde: '#10b981', amarillo: '#f59e0b', rojo: '#ef4444', gris: '#6b7280' };
+        const icons = { verde: '🟢', amarillo: '🟡', rojo: '🔴', gris: '⏳' };
+        const color = colors[rend.semaforo] || colors.gris;
+        const icon = icons[rend.semaforo] || icons.gris;
+
+        card.style.borderLeft = `4px solid ${color}`;
+        card.innerHTML = `
+            <div class="stat-icon">${icon}</div>
+            <div class="stat-content">
+                <h3>Rendimiento Hoy</h3>
+                <div class="stat-value" style="color: ${color};">${rend.porcentaje}%</div>
+                <p class="stat-label">${rend.total_registros} registros analizados</p>
+            </div>
+        `;
+    } catch (error) {
+        console.error('Error cargando rendimiento:', error);
+    }
 }
 
 function viewOperatorStats(userId) {

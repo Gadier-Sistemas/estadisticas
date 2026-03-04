@@ -25,8 +25,8 @@ Route::middleware('auth:sanctum')->group(function () {
         }
         );
 
-        // Procesos
-        Route::get('/procesos', [ProcesoController::class , 'index']);
+        // Procesos (CRUD completo - crear/editar/eliminar solo superadmin)
+        Route::apiResource('/procesos', ProcesoController::class);
 
         // Proyectos
         Route::get('/proyectos', [ProyectoController::class , 'index']);
@@ -37,6 +37,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Dashboard
         Route::get('/dashboard/stats', [DashboardController::class , 'getStats']);
+        Route::get('/dashboard/rendimiento', [DashboardController::class , 'getRendimiento']);
 
         // Usuarios (Solo Superadmin - Lógica en el controlador)
         Route::apiResource('/usuarios', UserController::class);

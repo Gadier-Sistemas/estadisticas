@@ -1,254 +1,267 @@
-// Consolidado Module
+// Consolidado Module — Conectado con API de Rendimiento BI
 function loadConsolidadoModule() {
     const consolidadoModule = document.getElementById('module-consolidado');
 
     consolidadoModule.innerHTML = `
         <div class="module-header">
-            <h2>Consolidado General</h2>
-            <p class="module-description">Resumen consolidado de estadísticas por periodo</p>
+            <h2>Consolidado de Rendimiento</h2>
+            <p class="module-description">Análisis de rendimiento Real vs Esperado — Basado en la fórmula de 540 minutos</p>
         </div>
 
         <div class="reportes-filters">
             <div class="form-group">
-                <label>Periodo</label>
-                <select id="consolidadoPeriodo">
-                    <option value="week">Esta Semana</option>
-                    <option value="month" selected>Este Mes</option>
-                    <option value="quarter">Este Trimestre</option>
-                    <option value="year">Este Año</option>
-                    <option value="custom">Personalizado</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label>Agrupar Por</label>
-                <select id="consolidadoGroup">
-                    <option value="operator">Operario</option>
-                    <option value="process" selected>Proceso</option>
-                    <option value="date">Fecha</option>
-                </select>
+                <label>Fecha</label>
+                <input type="date" id="consolidadoFecha" value="${new Date().toISOString().split('T')[0]}">
             </div>
             <div class="form-group" style="align-self: end;">
                 <button class="btn btn-primary" onclick="generateConsolidado()">
-                    📑 Generar Consolidado
+                    📊 Analizar Rendimiento
                 </button>
             </div>
         </div>
 
-        <div class="stats-grid" style="margin-bottom: var(--spacing-2xl);">
+        <div id="rendimientoStats" class="stats-grid" style="margin-bottom: var(--spacing-2xl);">
             <div class="stat-card">
-                <div class="stat-icon">📦</div>
+                <div class="stat-icon">⏳</div>
                 <div class="stat-content">
-                    <h3>Total Unidades</h3>
-                    <p class="stat-value">3,240</p>
-                    <span class="stat-label">+12% vs mes anterior</span>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon">⏱️</div>
-                <div class="stat-content">
-                    <h3>Total Horas</h3>
-                    <p class="stat-value">384</p>
-                    <span class="stat-label">160 horas/semana</span>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon">📈</div>
-                <div class="stat-content">
-                    <h3>Productividad</h3>
-                    <p class="stat-value">8.4</p>
-                    <span class="stat-label">Unidades/hora promedio</span>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon">✅</div>
-                <div class="stat-content">
-                    <h3>Eficiencia</h3>
-                    <p class="stat-value">92%</p>
-                    <span class="stat-label">Meta: 85%</span>
+                    <h3>Cargando...</h3>
+                    <p class="stat-value">—</p>
                 </div>
             </div>
         </div>
 
-        <div class="charts-grid" style="margin-bottom: var(--spacing-2xl);">
-            <div class="chart-card">
-                <h3>📊 Consolidado por Categoría</h3>
-                <canvas id="consolidadoChartCategory"></canvas>
-            </div>
-            <div class="chart-card">
-                <h3>📈 Tendencia Mensual</h3>
-                <canvas id="consolidadoChartTrend"></canvas>
-            </div>
-        </div>
-
-        <div class="form-card">
+        <div id="rendimientoResumen" class="form-card" style="margin-bottom: var(--spacing-2xl);">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-lg);">
-                <h3>📋 Tabla Consolidada</h3>
-                <div class="export-buttons">
-                    <button class="btn btn-success" onclick="exportConsolidadoExcel()">
-                        📥 Exportar Consolidado
-                    </button>
-                </div>
+                <h3>📋 Resumen por Proceso (Real vs Esperado)</h3>
+                <button class="btn btn-success" onclick="exportConsolidadoExcel()">
+                    📥 Exportar
+                </button>
             </div>
-
             <div class="table-container">
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>Proceso</th>
-                            <th>Código</th>
-                            <th>Total Registros</th>
-                            <th>Total Unidades</th>
-                            <th>Total Horas</th>
-                            <th>Productividad</th>
-                            <th>% del Total</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${renderConsolidadoTable()}
-                    </tbody>
-                    <tfoot>
-                        <tr style="background: var(--surface); font-weight: 700;">
-                            <td colspan="2">TOTAL</td>
-                            <td>${sampleData.statistics.length}</td>
-                            <td>3,240</td>
-                            <td>384h</td>
-                            <td>8.4 /hr</td>
-                            <td>100%</td>
-                        </tr>
-                    </tfoot>
-                </table>
+                <p style="text-align: center; padding: 2rem; color: var(--text-secondary);">
+                    Presiona "Analizar Rendimiento" para cargar los datos
+                </p>
+            </div>
+        </div>
+
+        <div id="rendimientoDetalle" class="form-card">
+            <h3>📝 Detalle por Registro</h3>
+            <div class="table-container">
+                <p style="text-align: center; padding: 2rem; color: var(--text-secondary);">
+                    Presiona "Analizar Rendimiento" para cargar los datos
+                </p>
             </div>
         </div>
     `;
 
-    initConsolidadoCharts();
+    // Carga automática al abrir el módulo
+    generateConsolidado();
 }
 
-function renderConsolidadoTable() {
-    // Group sample data by process
-    const processGroups = {};
+/**
+ * Genera el consolidado de rendimiento consumiendo la API.
+ * Fórmula BI: Rendimiento = Cantidad / ((Meta / 540) * Minutos)
+ */
+async function generateConsolidado() {
+    const fecha = document.getElementById('consolidadoFecha')?.value || new Date().toISOString().split('T')[0];
 
-    sampleData.processes.slice(0, 8).forEach((proc, index) => {
-        const registros = Math.floor(Math.random() * 20) + 5;
-        const unidades = Math.floor(Math.random() * 500) + 100;
-        const horas = Math.floor(Math.random() * 50) + 10;
-        const productivity = (unidades / horas).toFixed(2);
-        const percentage = ((unidades / 3240) * 100).toFixed(1);
+    showToast('📊 Calculando rendimiento...', 'info');
 
-        processGroups[proc.code] = {
-            name: proc.name,
-            registros,
-            unidades,
-            horas,
-            productivity,
-            percentage
-        };
-    });
+    try {
+        const token = sessionStorage.getItem('authToken');
+        const response = await fetch(`${API_URL}/dashboard/rendimiento?fecha=${fecha}`, {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Accept': 'application/json'
+            }
+        });
 
-    return Object.entries(processGroups).map(([code, data]) => `
-        <tr>
-            <td>${data.name}</td>
-            <td><span class="code-badge">${code}</span></td>
-            <td>${data.registros}</td>
-            <td><strong>${formatNumber(data.unidades)}</strong></td>
-            <td>${data.horas}h</td>
-            <td><span class="productivity-badge">${data.productivity} /hr</span></td>
-            <td>
-                <div style="display: flex; align-items: center; gap: 0.5rem;">
-                    <div class="progress-bar-mini">
-                        <div class="progress-fill-mini" style="width: ${data.percentage}%;"></div>
+        if (!response.ok) throw new Error('Error al obtener datos de rendimiento');
+
+        const data = await response.json();
+
+        renderRendimientoStats(data);
+        renderResumenTable(data.resumen);
+        renderDetalleTable(data.detalle);
+
+        showToast(`✅ Rendimiento calculado: ${data.total_registros} registros analizados`, 'success');
+
+    } catch (error) {
+        console.error('Error en consolidado:', error);
+        showToast('⚠️ No hay registros para esta fecha o hubo un error', 'warning');
+    }
+}
+
+/**
+ * Renderiza las tarjetas de estadísticas de rendimiento.
+ */
+function renderRendimientoStats(data) {
+    const statsContainer = document.getElementById('rendimientoStats');
+    if (!statsContainer) return;
+
+    const totalRegistros = data.total_registros || 0;
+    const resumen = data.resumen || [];
+
+    // Calcular promedios generales
+    const totalRealizado = resumen.reduce((acc, r) => acc + r.produccion_realizada, 0);
+    const totalEsperado = resumen.reduce((acc, r) => acc + r.produccion_esperada, 0);
+    const rendimientoGlobal = totalEsperado > 0 ? ((totalRealizado / totalEsperado) * 100).toFixed(1) : 0;
+    const semaforoColor = rendimientoGlobal >= 90 ? '#10b981' : (rendimientoGlobal >= 70 ? '#f59e0b' : '#ef4444');
+    const semaforoIcon = rendimientoGlobal >= 90 ? '🟢' : (rendimientoGlobal >= 70 ? '🟡' : '🔴');
+
+    statsContainer.innerHTML = `
+        <div class="stat-card" style="border-left: 4px solid ${semaforoColor};">
+            <div class="stat-icon">${semaforoIcon}</div>
+            <div class="stat-content">
+                <h3>Rendimiento Global</h3>
+                <p class="stat-value" style="color: ${semaforoColor};">${rendimientoGlobal}%</p>
+                <span class="stat-label">Meta: ≥ 90%</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">📦</div>
+            <div class="stat-content">
+                <h3>Producción Real</h3>
+                <p class="stat-value">${formatNumber(totalRealizado)}</p>
+                <span class="stat-label">Unidades procesadas</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">🎯</div>
+            <div class="stat-content">
+                <h3>Producción Esperada</h3>
+                <p class="stat-value">${formatNumber(Math.round(totalEsperado))}</p>
+                <span class="stat-label">Según metas y tiempo</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">📝</div>
+            <div class="stat-content">
+                <h3>Total Registros</h3>
+                <p class="stat-value">${totalRegistros}</p>
+                <span class="stat-label">${data.fecha}</span>
+            </div>
+        </div>
+    `;
+}
+
+/**
+ * Renderiza la tabla de resumen por proceso (replica la hoja "Resumen" del Excel).
+ */
+function renderResumenTable(resumen) {
+    const container = document.getElementById('rendimientoResumen');
+    if (!container || !resumen) return;
+
+    const rows = resumen.map(r => {
+        const semaforoIcon = r.semaforo === 'verde' ? '🟢' : (r.semaforo === 'amarillo' ? '🟡' : '🔴');
+        const semaforoColor = r.semaforo === 'verde' ? '#10b981' : (r.semaforo === 'amarillo' ? '#f59e0b' : '#ef4444');
+
+        return `
+            <tr>
+                <td><strong>${r.proceso}</strong></td>
+                <td>${r.unidad}</td>
+                <td><strong>${formatNumber(r.produccion_realizada)}</strong></td>
+                <td>${formatNumber(Math.round(r.produccion_esperada))}</td>
+                <td>
+                    <span style="color: ${semaforoColor}; font-weight: 700;">
+                        ${semaforoIcon} ${r.rendimiento}%
+                    </span>
+                </td>
+                <td>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <div class="progress-bar-mini">
+                            <div class="progress-fill-mini" style="width: ${Math.min(r.rendimiento, 100)}%; background: ${semaforoColor};"></div>
+                        </div>
+                        <span style="color: ${r.rendimiento_faltante > 0 ? '#ef4444' : '#10b981'};">
+                            ${r.rendimiento_faltante > 0 ? '-' + r.rendimiento_faltante + '%' : '✓'}
+                        </span>
                     </div>
-                    <span>${data.percentage}%</span>
-                </div>
-            </td>
-        </tr>
-    `).join('');
+                </td>
+            </tr>
+        `;
+    }).join('');
+
+    container.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-lg);">
+            <h3>📋 Resumen por Proceso (Real vs Esperado)</h3>
+            <button class="btn btn-success" onclick="exportConsolidadoExcel()">
+                📥 Exportar
+            </button>
+        </div>
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Proceso</th>
+                        <th>Unidad</th>
+                        <th>Producción Real</th>
+                        <th>Producción Esperada</th>
+                        <th>% Rendimiento</th>
+                        <th>Faltante</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${rows.length > 0 ? rows : '<tr><td colspan="6" style="text-align:center; padding:2rem;">Sin registros para esta fecha</td></tr>'}
+                </tbody>
+            </table>
+        </div>
+    `;
 }
 
-function initConsolidadoCharts() {
-    setTimeout(() => {
-        // Category Chart
-        const categoryCtx = document.getElementById('consolidadoChartCategory');
-        if (categoryCtx) {
-            new Chart(categoryCtx, {
-                type: 'bar',
-                data: {
-                    labels: ['Custodia', 'Operativo'],
-                    datasets: [{
-                        label: 'Unidades Procesadas',
-                        data: [1240, 2000],
-                        backgroundColor: [
-                            'rgba(74, 172, 254, 0.8)',
-                            'rgba(245, 87, 108, 0.8)'
-                        ],
-                        borderRadius: 8
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
-                            ticks: { color: '#b4b4d4' }
-                        },
-                        x: {
-                            grid: { display: false },
-                            ticks: { color: '#b4b4d4' }
-                        }
-                    }
-                }
-            });
-        }
+/**
+ * Renderiza la tabla de detalle por registro individual.
+ */
+function renderDetalleTable(detalle) {
+    const container = document.getElementById('rendimientoDetalle');
+    if (!container || !detalle) return;
 
-        // Trend Chart
-        const trendCtx = document.getElementById('consolidadoChartTrend');
-        if (trendCtx) {
-            new Chart(trendCtx, {
-                type: 'line',
-                data: {
-                    labels: ['Sem 1', 'Sem 2', 'Sem 3', 'Sem 4'],
-                    datasets: [{
-                        label: 'Productividad',
-                        data: [7.8, 8.1, 8.4, 8.7],
-                        borderColor: '#667eea',
-                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
-                        borderWidth: 3,
-                        fill: true,
-                        tension: 0.4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        y: {
-                            beginAtZero: false,
-                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
-                            ticks: { color: '#b4b4d4' }
-                        },
-                        x: {
-                            grid: { display: false },
-                            ticks: { color: '#b4b4d4' }
-                        }
-                    }
-                }
-            });
-        }
-    }, 100);
+    const rows = detalle.map(d => {
+        const semaforoIcon = d.semaforo === 'verde' ? '🟢' : (d.semaforo === 'amarillo' ? '🟡' : '🔴');
+        const semaforoColor = d.semaforo === 'verde' ? '#10b981' : (d.semaforo === 'amarillo' ? '#f59e0b' : '#ef4444');
+
+        return `
+            <tr>
+                <td>${d.operario}</td>
+                <td><span class="code-badge">${d.proceso_codigo}</span></td>
+                <td>${d.proceso_nombre}</td>
+                <td>${d.proyecto}</td>
+                <td><strong>${formatNumber(d.cantidad)}</strong> ${d.unidad}</td>
+                <td>${d.tiempo} (${d.minutos_trabajados} min)</td>
+                <td>${formatNumber(Math.round(d.produccion_esperada))}</td>
+                <td style="color: ${semaforoColor}; font-weight: 700;">${semaforoIcon} ${d.rendimiento_porcentaje}%</td>
+                <td>${d.observaciones || '—'}</td>
+            </tr>
+        `;
+    }).join('');
+
+    container.innerHTML = `
+        <h3>📝 Detalle por Registro</h3>
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Operario</th>
+                        <th>Código</th>
+                        <th>Proceso</th>
+                        <th>Proyecto</th>
+                        <th>Cantidad</th>
+                        <th>Tiempo</th>
+                        <th>Esperado</th>
+                        <th>Rendimiento</th>
+                        <th>Observaciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${rows.length > 0 ? rows : '<tr><td colspan="9" style="text-align:center; padding:2rem;">Sin registros para esta fecha</td></tr>'}
+                </tbody>
+            </table>
+        </div>
+    `;
 }
 
-function generateConsolidado() {
-    showToast('📑 Generando consolidado...', 'info');
-    setTimeout(() => {
-        showToast('✅ Consolidado generado', 'success');
-    }, 800);
-}
-
+/**
+ * Exportación a Excel (placeholder — se implementará con SheetJS).
+ */
 function exportConsolidadoExcel() {
-    showToast('📥 Exportando consolidado...', 'info');
-    setTimeout(() => {
-        showToast('✅ Consolidado exportado a Excel', 'success');
-    }, 1000);
+    showToast('📥 Función de exportación en desarrollo...', 'info');
 }

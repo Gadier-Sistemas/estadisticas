@@ -14,10 +14,19 @@ class Proceso extends Model
         'codigo',
         'nombre',
         'categoria',
+        'tipo_proceso',
+        'servicio',
+        'proyecto_origen',
         'unidad',
         'meta_diaria',
+        'meta_hora',
+        'meta_minuto',
+        'descripcion_actividad',
     ];
 
+    /**
+     * Relación: Un proceso tiene muchos registros de producción.
+     */
     public function registros()
     {
         return $this->hasMany(Registro::class , 'proceso_codigo', 'codigo');
