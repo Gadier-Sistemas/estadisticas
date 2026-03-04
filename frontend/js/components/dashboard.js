@@ -23,7 +23,10 @@ function loadDashboardModule() {
     }
 }
 
-// Operator Dashboard - Calendar View
+/**
+ * Carga el dashboard específico para un operario (o para un admin viendo a un operario).
+ * @param {Object} operario - El objeto del usuario operario a mostrar.
+ */
 function loadOperatorDashboard(user) {
     const dashboardModule = document.getElementById('module-dashboard');
     const today = new Date();
@@ -217,7 +220,9 @@ function formatDateISO(date) {
     return `${year}-${month}-${day}`;
 }
 
-// Admin Dashboard - Stats View
+/**
+ * Carga el dashboard principal para administradores, calculando estadísticas globales.
+ */
 function loadAdminDashboard() {
     const dashboardModule = document.getElementById('module-dashboard');
     const users = window.getUsers ? getUsers() : [];
@@ -361,7 +366,9 @@ function loadAdminDashboard() {
 }
 
 /**
- * Carga el rendimiento global del día desde la API y actualiza la tarjeta.
+ * Consulta la API para obtener el rendimiento global del día y actualiza la UI.
+ * @async
+ * @returns {Promise<void>}
  */
 async function loadRendimientoCard() {
     const card = document.getElementById('rendimientoCard');
@@ -400,6 +407,10 @@ async function loadRendimientoCard() {
     }
 }
 
+/**
+ * Cambia la vista para ver las estadísticas detalladas de un operario específico.
+ * @param {number|string} userId - ID del usuario a visualizar.
+ */
 function viewOperatorStats(userId) {
     const users = window.getUsers ? getUsers() : [];
     const user = users.find(u => u.id === parseInt(userId));

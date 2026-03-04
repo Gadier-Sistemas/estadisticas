@@ -1,4 +1,6 @@
-// Consolidado Module — Conectado con API de Rendimiento BI
+/**
+ * Inicializa el módulo de consolidado, configurando el HTML base y cargando los datos iniciales.
+ */
 function loadConsolidadoModule() {
     const consolidadoModule = document.getElementById('module-consolidado');
 
@@ -59,8 +61,10 @@ function loadConsolidadoModule() {
 }
 
 /**
- * Genera el consolidado de rendimiento consumiendo la API.
- * Fórmula BI: Rendimiento = Cantidad / ((Meta / 540) * Minutos)
+ * Genera el análisis consolidado de rendimiento consultando la API.
+ * Aplica la fórmula BI: Rendimiento = Cantidad / ((Meta / 540) * Minutos)
+ * @async
+ * @returns {Promise<void>}
  */
 async function generateConsolidado() {
     const fecha = document.getElementById('consolidadoFecha')?.value || new Date().toISOString().split('T')[0];
@@ -93,7 +97,8 @@ async function generateConsolidado() {
 }
 
 /**
- * Renderiza las tarjetas de estadísticas de rendimiento.
+ * Renderiza las tarjetas KPI de rendimiento (Global, Producción Real vs Esperada).
+ * @param {Object} data - Datos devueltos por la API de rendimiento.
  */
 function renderRendimientoStats(data) {
     const statsContainer = document.getElementById('rendimientoStats');

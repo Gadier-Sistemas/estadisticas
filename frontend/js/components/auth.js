@@ -14,7 +14,8 @@ let currentUser = {
 };
 
 /**
- * Get current logged-in user
+ * Obtiene el usuario autenticado actualmente desde el SessionStorage.
+ * @returns {Object|null} El objeto de usuario o null si no está autenticado.
  */
 function getCurrentUser() {
     // Check sessionStorage first
@@ -29,7 +30,8 @@ function getCurrentUser() {
 }
 
 /**
- * Set current user (for switching users)
+ * Establece el usuario actual en la sesión y lo persiste en LocalStorage.
+ * @param {Object} user - El objeto de usuario a establecer.
  */
 function setCurrentUser(user) {
     currentUser = user;
@@ -159,7 +161,10 @@ function saveUsers(users) {
 }
 
 /**
- * Login function linked to Laravel API
+ * Realiza la autenticación contra la API de Laravel.
+ * @param {string} username - Nombre de usuario.
+ * @param {string} password - Contraseña.
+ * @returns {Promise<Object>} Resultado de la operación {success, user, error}.
  */
 async function login(username, password) {
     try {
@@ -233,7 +238,8 @@ function registerUser(userData) {
 }
 
 /**
- * Logout current user
+ * Cierra la sesión del usuario actual, revoca el token en el backend y limpia el STORAGE.
+ * @returns {Promise<void>}
  */
 async function logout() {
     const token = sessionStorage.getItem('authToken');

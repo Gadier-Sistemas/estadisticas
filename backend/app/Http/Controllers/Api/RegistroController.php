@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Models\Registro;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\RegistroStoreRequest;
 use Illuminate\Http\Request;
 
 class RegistroController extends Controller
@@ -19,20 +20,9 @@ class RegistroController extends Controller
         return response()->json($user->registrations()->with('proceso')->get());
     }
 
-    public function store(Request $request)
+    public function store(RegistroStoreRequest $request)
     {
-        $validated = $request->validate([
-            'user_id' => 'nullable|exists:users,id',
-            'proyecto_id' => 'required|exists:proyectos,id',
-            'proceso_codigo' => 'required|string',
-            'fecha' => 'required|date',
-            'cantidad' => 'required|integer',
-            'tiempo' => 'required|string',
-            'cliente' => 'nullable|string',
-            'observaciones' => 'nullable|string',
-            'tipo' => 'nullable|string',
-            'novedad_tipo' => 'nullable|string',
-        ]);
+        $validated = $request->validated();
 
         // Si el usuario es admin, puede enviar un user_id manual. Si no, usamos el del token.
         $userId = ($request->user()->rol === 'superadmin' && $request->has('user_id'))

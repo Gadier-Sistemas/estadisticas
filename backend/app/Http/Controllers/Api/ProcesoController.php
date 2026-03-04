@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api;
 
 use App\Models\Proceso;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\ProcesoStoreRequest;
+use App\Http\Requests\ProcesoUpdateRequest;
 use Illuminate\Http\Request;
 
 class ProcesoController extends Controller
@@ -19,25 +21,9 @@ class ProcesoController extends Controller
     /**
      * Almacena un nuevo proceso (solo superadmin).
      */
-    public function store(Request $request)
+    public function store(ProcesoStoreRequest $request)
     {
-        if ($request->user()->rol !== 'superadmin') {
-            return response()->json(['message' => 'No autorizado'], 403);
-        }
-
-        $validated = $request->validate([
-            'codigo' => 'required|string|unique:procesos,codigo',
-            'nombre' => 'required|string|max:255',
-            'categoria' => 'required|string|max:255',
-            'tipo_proceso' => 'nullable|string|max:100',
-            'servicio' => 'nullable|string|max:255',
-            'proyecto_origen' => 'nullable|string|max:255',
-            'unidad' => 'required|string|max:100',
-            'meta_diaria' => 'required|integer|min:1',
-            'meta_hora' => 'nullable|numeric',
-            'meta_minuto' => 'nullable|numeric',
-            'descripcion_actividad' => 'nullable|string',
-        ]);
+        $validated = $request->validated();
 
         // Calcular metas automáticas si no se proporcionan (jornada de 540 minutos)
         if (empty($validated['meta_hora'])) {
@@ -63,26 +49,10 @@ class ProcesoController extends Controller
     /**
      * Actualiza un proceso existente (solo superadmin).
      */
-    public function update(Request $request, string $codigo)
+    public function update(ProcesoUpdateRequest $request, string $codigo)
     {
-        if ($request->user()->rol !== 'superadmin') {
-            return response()->json(['message' => 'No autorizado'], 403);
-        }
-
         $proceso = Proceso::findOrFail($codigo);
-
-        $validated = $request->validate([
-            'nombre' => 'sometimes|string|max:255',
-            'categoria' => 'sometimes|string|max:255',
-            'tipo_proceso' => 'nullable|string|max:100',
-            'servicio' => 'nullable|string|max:255',
-            'proyecto_origen' => 'nullable|string|max:255',
-            'unidad' => 'sometimes|string|max:100',
-            'meta_diaria' => 'sometimes|integer|min:1',
-            'meta_hora' => 'nullable|numeric',
-            'meta_minuto' => 'nullable|numeric',
-            'descripcion_actividad' => 'nullable|string',
-        ]);
+        $validated = $request->validated();
 
         // Recalcular metas si cambia meta_diaria
         if (isset($validated['meta_diaria'])) {
