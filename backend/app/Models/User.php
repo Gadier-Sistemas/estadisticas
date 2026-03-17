@@ -27,6 +27,8 @@ class User extends Authenticatable
         'codigo',
         'rol',
         'activo',
+        'cedula',
+        'tipo_documento',
     ];
 
     /**

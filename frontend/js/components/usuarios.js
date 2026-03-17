@@ -254,7 +254,7 @@ function promptUserSwitch(userId, userName) {
     }, 100);
 }
 
-function confirmSwitchUser(userId) {
+async function confirmSwitchUser(userId) {
     const passwordInput = document.getElementById('switch-password');
     const errorDiv = document.getElementById('switch-error');
     const password = passwordInput.value;
@@ -267,12 +267,14 @@ function confirmSwitchUser(userId) {
         return;
     }
 
-    if (window.verifyPassword) {
-        const result = window.verifyPassword(userId, password);
+    const users = window.getUsers();
+    const user = users.find(u => u.id === userId);
+
+    if (window.login && user) {
+        const result = await window.login(user.username, password);
 
         if (result.success) {
             // Success
-            window.setCurrentUser(result.user);
             showToast(`✅ Bienvenido, ${result.user.name}`, 'success');
 
             const modal = document.getElementById('password-modal');
@@ -292,7 +294,7 @@ function confirmSwitchUser(userId) {
             passwordInput.focus();
         }
     } else {
-        console.error("verifyPassword function not found in auth.js");
+        console.error("Login function not found or user not found in auth.js");
     }
 }
 
@@ -465,20 +467,25 @@ function nuevoUsuario() {
     document.querySelector('.usuarios-form-section').scrollIntoView({ behavior: 'smooth' });
 }
 
-function guardarUsuario() {
+async function guardarUsuario() {
     const id = document.getElementById('usuarioId').value;
     const nombre = document.getElementById('usuarioNombre').value.trim();
     const apellido = document.getElementById('usuarioApellido').value.trim();
     const cedula = document.getElementById('usuarioCedula').value.trim();
     const tipoDocumento = document.getElementById('usuarioTipoDocumento').value;
-    const username = document.getElementById('usuarioEmail').value.trim(); // Reusing the same ID for simplicity in HTML if not changed yet
+    const username = document.getElementById('usuarioEmail').value.trim();
     const password = document.getElementById('usuarioPassword').value;
     const rol = document.getElementById('usuarioRol').value;
     const activo = document.getElementById('usuarioActivo').checked;
 
     // --- Validation ---
-    if (!nombre || !apellido || !cedula || !username || !password) {
+    if (!nombre || !apellido || !cedula || !username) { // password is not strictly required on update if it's empty
         showToast('⚠️ Por favor complete todos los campos obligatorios', 'warning');
+        return;
+    }
+
+    if (!id && !password) {
+        showToast('⚠️ La contraseña es obligatoria para nuevos usuarios', 'warning');
         return;
     }
 
@@ -491,20 +498,6 @@ function guardarUsuario() {
         showToast('⚠️ La longitud del documento no es válida', 'warning');
         return;
     }
-
-    const users = getUsers();
-
-    // Check duplicates
-    const isDuplicateCedula = users.some(u => u.cedula === cedula && u.id !== parseInt(id || 0));
-    if (isDuplicateCedula) {
-        showToast('⚠️ Ya existe un usuario registrado con esa Cédula', 'error');
-        return;
-    }
-
-    if (window.usernameExists && usernameExists(username, parseInt(id || 0))) {
-        showToast('⚠️ Ya existe ese nombre de usuario', 'error');
-        return;
-    }
     // ------------------
 
     const userData = {
@@ -513,54 +506,75 @@ function guardarUsuario() {
         cedula: cedula,
         tipoDocumento: tipoDocumento,
         username: username,
-        password: password,
         rol: rol,
         activo: activo,
-        codigo: rol === 'superadmin' ? 'ADM' + Math.floor(Math.random() * 1000) : 'OP' + Math.floor(Math.random() * 1000)
+        codigo: id ? undefined : (rol === 'superadmin' ? 'ADM' + Math.floor(Math.random() * 1000) : 'OP' + Math.floor(Math.random() * 1000))
     };
-
-    let result;
-    if (id) {
-        // Update existing
-        const index = users.findIndex(u => u.id === parseInt(id));
-        if (index !== -1) {
-            const existingUser = users[index];
-            const updatedUser = {
-                ...existingUser,
-                ...userData,
-                id: parseInt(id),
-                codigo: existingUser.codigo
-            };
-
-            // Preserve logic for password update
-            if (password && password !== existingUser.password) {
-                updatedUser.password = password;
-            } else {
-                updatedUser.password = existingUser.password;
-            }
-
-            users[index] = updatedUser;
-
-            saveUsers(users);
-            result = { success: true };
-            showToast('✅ Usuario actualizado exitosamente', 'success');
-        } else {
-            result = { success: false, error: 'Usuario no encontrado' };
-        }
-    } else {
-        // Create new
-        result = registerUser(userData);
-        if (result.success) {
-            showToast('✅ Usuario creado exitosamente', 'success');
-
-            // Show new credentials
-            document.getElementById('displayEmail').textContent = username;
-            document.getElementById('displayPassword').textContent = password;
-            document.getElementById('newCredentialsDisplay').style.display = 'block';
-        }
+    
+    if (password) {
+        userData.password = password;
     }
 
+    let result = { success: false };
+    const btnSubmit = document.querySelector('#usuarioForm button[type="submit"]');
+    const originalText = btnSubmit.innerHTML;
+    btnSubmit.innerHTML = '⏳ Guardando...';
+    btnSubmit.disabled = true;
+
+    try {
+        const token = sessionStorage.getItem('authToken');
+        
+        if (id) {
+            // Update existing
+            const response = await fetch(`${API_URL}/usuarios/${id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(userData)
+            });
+            const data = await response.json();
+            
+            if (response.ok) {
+                result = { success: true };
+                showToast('✅ Usuario actualizado exitosamente', 'success');
+            } else {
+                result = { success: false, error: data.message || 'Error al actualizar' };
+            }
+        } else {
+            // Create new
+            const response = await fetch(`${API_URL}/usuarios`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(userData)
+            });
+            const data = await response.json();
+            
+            if (response.ok) {
+                result = { success: true };
+                showToast('✅ Usuario creado exitosamente', 'success');
+
+                // Show new credentials
+                document.getElementById('displayEmail').textContent = username;
+                document.getElementById('displayPassword').textContent = password;
+                document.getElementById('newCredentialsDisplay').style.display = 'block';
+            } else {
+                result = { success: false, error: data.message || 'Error al crear' };
+            }
+        }
+    } catch (error) {
+        result = { success: false, error: 'Error de conexión' };
+    }
+
+    btnSubmit.innerHTML = originalText;
+    btnSubmit.disabled = false;
+
     if (result.success) {
+        await window.syncUsers(); // Refresh data from backend
         // Update grid and stats
         document.getElementById('usuariosGrid').innerHTML = renderUsuariosGrid();
         updateUsuariosStats();
@@ -601,35 +615,62 @@ function editarUsuario(id) {
     document.querySelector('.usuarios-form-section').scrollIntoView({ behavior: 'smooth' });
 }
 
-function toggleUsuarioStatus(id) {
+async function toggleUsuarioStatus(id) {
     const users = getUsers();
-    const index = users.findIndex(u => u.id === id);
-    if (index === -1) return;
+    const user = users.find(u => u.id === id);
+    if (!user) return;
 
-    users[index].activo = !users[index].activo;
-    saveUsers(users);
+    try {
+        const token = sessionStorage.getItem('authToken');
+        const response = await fetch(`${API_URL}/usuarios/${id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ activo: !user.activo })
+        });
 
-    const user = users[index];
-
-    // Update grid
-    document.getElementById('usuariosGrid').innerHTML = renderUsuariosGrid();
-    updateUsuariosStats();
-    showToast(`${user.activo ? '✅ Usuario activado' : '🔒 Usuario desactivado'}`, 'info');
+        if (response.ok) {
+            await window.syncUsers();
+            document.getElementById('usuariosGrid').innerHTML = renderUsuariosGrid();
+            updateUsuariosStats();
+            showToast(`${!user.activo ? '✅ Usuario activado' : '🔒 Usuario desactivado'}`, 'info');
+        } else {
+            showToast('❌ Error al cambiar estado', 'error');
+        }
+    } catch (e) {
+        showToast('❌ Error de conexión', 'error');
+    }
 }
 
-function eliminarUsuario(id) {
+async function eliminarUsuario(id) {
     const users = getUsers();
     const user = users.find(u => u.id === id);
     if (!user) return;
 
     if (confirm(`¿Estás seguro de que deseas eliminar a ${user.name} ${user.apellido}?`)) {
-        const remainingUsers = users.filter(u => u.id !== id);
-        saveUsers(remainingUsers);
+        try {
+            const token = sessionStorage.getItem('authToken');
+            const response = await fetch(`${API_URL}/usuarios/${id}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
 
-        // Update grid
-        document.getElementById('usuariosGrid').innerHTML = renderUsuariosGrid();
-        updateUsuariosStats();
-        showToast('🗑️ Usuario eliminado', 'success');
+            if (response.ok) {
+                await window.syncUsers();
+                document.getElementById('usuariosGrid').innerHTML = renderUsuariosGrid();
+                updateUsuariosStats();
+                showToast('🗑️ Usuario eliminado', 'success');
+            } else {
+                const data = await response.json();
+                showToast('❌ ' + (data.message || 'Error al eliminar'), 'error');
+            }
+        } catch (e) {
+            showToast('❌ Error de conexión', 'error');
+        }
     }
 }
 

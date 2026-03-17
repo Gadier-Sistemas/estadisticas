@@ -12,6 +12,15 @@ function loadConsolidadoModule() {
 
         <div class="reportes-filters">
             <div class="form-group">
+                <label>Operario</label>
+                <select id="consolidadoOperario">
+                    <option value="">Todos los operarios</option>
+                    ${(window.getUsers ? getUsers() : []).filter(u => u.rol === 'operario').map(op => 
+                        `<option value="${op.id}">${op.name} ${op.apellido || ''}</option>`
+                    ).join('')}
+                </select>
+            </div>
+            <div class="form-group">
                 <label>Fecha</label>
                 <input type="date" id="consolidadoFecha" value="${new Date().toISOString().split('T')[0]}">
             </div>
@@ -68,12 +77,19 @@ function loadConsolidadoModule() {
  */
 async function generateConsolidado() {
     const fecha = document.getElementById('consolidadoFecha')?.value || new Date().toISOString().split('T')[0];
+    const opSelect = document.getElementById('consolidadoOperario');
+    const userId = opSelect ? opSelect.value : '';
 
     showToast('📊 Calculando rendimiento...', 'info');
 
     try {
+        let url = `${API_URL}/dashboard/rendimiento?fecha=${fecha}`;
+        if (userId) {
+            url += `&user_id=${userId}`;
+        }
+
         const token = sessionStorage.getItem('authToken');
-        const response = await fetch(`${API_URL}/dashboard/rendimiento?fecha=${fecha}`, {
+        const response = await fetch(url, {
             headers: {
                 'Authorization': `Bearer ${token}`,
                 'Accept': 'application/json'
@@ -83,6 +99,7 @@ async function generateConsolidado() {
         if (!response.ok) throw new Error('Error al obtener datos de rendimiento');
 
         const data = await response.json();
+        window.currentConsolidadoData = data; // Guardamos para exportar
 
         renderRendimientoStats(data);
         renderResumenTable(data.resumen);
@@ -268,5 +285,43 @@ function renderDetalleTable(detalle) {
  * Exportación a Excel (placeholder — se implementará con SheetJS).
  */
 function exportConsolidadoExcel() {
-    showToast('📥 Función de exportación en desarrollo...', 'info');
+    if (!window.currentConsolidadoData || !window.currentConsolidadoData.detalle || window.currentConsolidadoData.detalle.length === 0) {
+        showToast('⚠️ No hay datos para exportar', 'warning');
+        return;
+    }
+
+    showToast('📥 Generando Exportable CSV...', 'info');
+    
+    const headers = ['Operario', 'Codigo', 'Proceso', 'Proyecto', 'Cantidad', 'Unidad_Medida', 'Tiempo', 'Minutos', 'Produccion_Esperada', 'Rendimiento_Pct', 'Semaforo', 'Observaciones'];
+    let csvContent = headers.join(',') + '\\n';
+
+    window.currentConsolidadoData.detalle.forEach(d => {
+        const row = [
+            `"${d.operario || ''}"`,
+            d.proceso_codigo || '',
+            `"${d.proceso_nombre || ''}"`,
+            `"${d.proyecto || ''}"`,
+            d.cantidad || 0,
+            d.unidad || '',
+            d.tiempo || '0:00',
+            d.minutos_trabajados || 0,
+            d.produccion_esperada || 0,
+            d.rendimiento_porcentaje || 0,
+            d.semaforo || '',
+            `"${(d.observaciones || '').replace(/"/g, '""')}"`
+        ];
+        csvContent += row.join(',') + '\\n';
+    });
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `Consolidado_Gadier_${window.currentConsolidadoData.fecha}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    showToast('✅ Archivo CSV descargado', 'success');
 }

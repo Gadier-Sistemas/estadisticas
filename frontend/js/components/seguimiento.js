@@ -103,31 +103,116 @@ function selectOperatorForTracking(userId) {
     renderAdminCalendar();
 }
 
+let seguimientoMonth = new Date().getMonth();
+let seguimientoYear = new Date().getFullYear();
+
 function renderAdminCalendar() {
-    // Re-implement simplified calendar logic or adapt dashboard.js renderCalendar
-    // For now, let's create a basic view
     const calendarEl = document.getElementById('adminCalendar');
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = today.getMonth();
+    const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+        'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 
     calendarEl.innerHTML = `
-        <div style="text-align: right; margin-bottom: 1rem;">
-            <strong>${today.toLocaleString('es-ES', { month: 'long', year: 'numeric' })}</strong>
-        </div>
-        <div class="calendar-grid">
-            ${generateCalendarDays(year, month, currentTrackingId)}
+        <div class="calendar-container" style="padding: 0;">
+            <div class="calendar-header" style="justify-content: flex-end; gap: 1rem; margin-bottom: 1rem;">
+                <button class="btn-icon" onclick="changeSeguimientoMonth(-1)">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </button>
+                <h3 style="margin: 0;">${monthNames[seguimientoMonth]} ${seguimientoYear}</h3>
+                <button class="btn-icon" onclick="changeSeguimientoMonth(1)">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="calendar-grid">
+                ${generateCalendarDays(seguimientoYear, seguimientoMonth, currentTrackingId)}
+            </div>
+             <div class="calendar-legend" style="margin-top: 1rem;">
+                <div class="legend-item"><span class="legend-dot success">✓</span><span>Reporte subido</span></div>
+                <div class="legend-item"><span class="legend-dot warning">⚠</span><span>Falta reporte</span></div>
+                <div class="legend-item"><span class="legend-dot" style="background: #3b82f6;">ℹ</span><span>Novedad Total</span></div>
+            </div>
         </div>
     `;
 }
 
-function generateCalendarDays(year, month, userId) {
-    // Need access to registrations
-    const regs = window.sampleData.registrations.filter(r => parseInt(r.userId) === parseInt(userId));
-
-    // Logic similar to dashboard but returning HTML string
-    // Simplified for plan: Just placeholders
-    return `<div style="padding: 2rem; text-align: center; color: #94a3b8; border: 2px dashed #e2e8f0; border-radius: 12px;">
-        Aquí se cargará el calendario del usuario ${userId} usando la misma lógica visual.
-    </div>`;
+function changeSeguimientoMonth(direction) {
+    seguimientoMonth += direction;
+    if (seguimientoMonth > 11) {
+        seguimientoMonth = 0;
+        seguimientoYear++;
+    } else if (seguimientoMonth < 0) {
+        seguimientoMonth = 11;
+        seguimientoYear--;
+    }
+    renderAdminCalendar();
 }
+
+function generateCalendarDays(year, month, userId) {
+    const dayNames = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+    let html = '';
+
+    dayNames.forEach(day => {
+        html += `<div class="calendar-day-header">${day}</div>`;
+    });
+
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const today = new Date();
+
+    for (let i = 0; i < firstDay; i++) {
+        html += `<div class="calendar-day empty"></div>`;
+    }
+
+    const targets = JSON.parse(localStorage.getItem('app_daily_targets') || '{}');
+
+    for (let day = 1; day <= daysInMonth; day++) {
+        const date = new Date(year, month, day);
+        const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const isToday = date.toDateString() === today.toDateString();
+        const isFuture = date > today;
+
+        const reportsForDate = window.sampleData.registrations.filter(r =>
+            parseInt(r.userId) === parseInt(userId) && r.fecha === dateString
+        );
+        const count = reportsForDate.length;
+
+        const targetForDate = targets[`${userId}_${dateString}`] || 1;
+        const hasReachedTarget = count >= targetForDate;
+        const hasAnyReport = count > 0;
+        const isPureNovelty = hasAnyReport && reportsForDate.every(r => r.type === 'novedad_total' || r.tipo === 'novedad_total');
+
+        let dayClass = 'calendar-day';
+        let indicator = '';
+
+        if (isToday) dayClass += ' today';
+
+        if (isFuture) {
+            dayClass += ' future';
+            indicator = '<span class="day-indicator future">•</span>';
+        } else if (isPureNovelty) {
+            dayClass += ' novelty';
+            indicator = '<span class="day-indicator info" style="color: #3b82f6;">ℹ</span>';
+        } else if (hasReachedTarget) {
+            dayClass += ' success';
+            indicator = '<span class="day-indicator success">✓</span>';
+        } else if (hasAnyReport) {
+            dayClass += ' warning-partial';
+            indicator = `<span class="day-indicator warning" title="${count}/${targetForDate} completed">⏳</span>`;
+        } else {
+            dayClass += ' warning';
+            indicator = '<span class="day-indicator warning">⚠</span>';
+        }
+
+        html += `
+            <div class="${dayClass}" onclick="if(typeof showDayDetail === 'function') showDayDetail(${userId}, '${dateString}')" style="cursor: pointer; ${isPureNovelty ? 'background-color: #eff6ff; border-color: #3b82f6;' : ''}">
+                <span class="day-number" style="${isPureNovelty ? 'color: #1e40af;' : ''}">${day}</span>
+                ${indicator}
+            </div>
+        `;
+    }
+    return html;
+}
+

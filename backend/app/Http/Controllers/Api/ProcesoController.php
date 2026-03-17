@@ -73,10 +73,6 @@ class ProcesoController extends Controller
      */
     public function destroy(Request $request, string $codigo)
     {
-        if ($request->user()->rol !== 'superadmin') {
-            return response()->json(['message' => 'No autorizado'], 403);
-        }
-
         $proceso = Proceso::findOrFail($codigo);
 
         // Verificar que no tenga registros asociados

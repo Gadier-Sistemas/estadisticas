@@ -40,17 +40,7 @@ function setCurrentUser(user) {
     localStorage.setItem('currentUser', JSON.stringify(user));
 }
 
-/**
- * Verify password for user switching
- */
-function verifyPassword(userId, password) {
-    const users = getUsers();
-    const user = users.find(u => u.id === userId);
-    if (user && user.password === password) {
-        return { success: true, user: user };
-    }
-    return { success: false };
-}
+
 
 /**
  * Check if user has specific role
@@ -139,26 +129,7 @@ function getUsers() {
     return window.usuariosData || [];
 }
 
-/**
- * Save users to storage
- */
-function saveUsers(users) {
-    localStorage.setItem('app_users', JSON.stringify(users));
 
-    // If current user was updated, update session too
-    const currentUser = getCurrentUser();
-    if (currentUser) {
-        const updatedUser = users.find(u => u.id === currentUser.id);
-        if (updatedUser) {
-            const { password, ...safeUser } = updatedUser;
-            sessionStorage.setItem('currentUser', JSON.stringify(safeUser));
-            // Also update localStorage currentUser if it exists there
-            if (localStorage.getItem('currentUser')) {
-                localStorage.setItem('currentUser', JSON.stringify(safeUser));
-            }
-        }
-    }
-}
 
 /**
  * Realiza la autenticación contra la API de Laravel.
@@ -206,36 +177,7 @@ async function login(username, password) {
     }
 }
 
-/**
- * Check if email already exists
- */
-function usernameExists(username, excludeId = null) {
-    const users = getUsers();
-    return users.some(u => u.username.toLowerCase() === username.toLowerCase() && u.id !== excludeId);
-}
 
-/**
- * Register new user
- */
-function registerUser(userData) {
-    const users = getUsers();
-
-    if (usernameExists(userData.username)) {
-        return { success: false, error: 'El nombre de usuario ya está registrado' };
-    }
-
-    const newId = users.length > 0 ? Math.max(...users.map(u => u.id)) + 1 : 1;
-    const newUser = {
-        id: newId,
-        ...userData,
-        activo: true
-    };
-
-    users.push(newUser);
-    saveUsers(users);
-
-    return { success: true, user: newUser };
-}
 
 /**
  * Cierra la sesión del usuario actual, revoca el token en el backend y limpia el STORAGE.
@@ -314,6 +256,8 @@ function initAuth() {
     window.isOperario = isOperario;
     window.isSuperadmin = isSuperadmin;
     window.logout = logout;
+    window.login = login;
+    window.syncUsers = syncUsers;
 
     // Expose reset function for testing/recovery
     window.resetUsers = function () {

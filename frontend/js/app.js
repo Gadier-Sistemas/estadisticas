@@ -111,15 +111,6 @@ async function saveRegistration(regData) {
     console.log('💾 Enviando registro a la API:', regData);
 
     try {
-        // Encontrar el ID del proceso basado en el código
-        const process = sampleData.processes.find(p => p.codigo === regData.codigo || p.code === regData.codigo);
-        const procesoId = process ? process.id : null;
-
-        if (!procesoId && regData.type !== 'novedad_total') {
-            console.error('❌ No se encontró el ID del proceso para el código:', regData.codigo);
-            return null;
-        }
-
         const response = await fetch(`${API_URL}/registros`, {
             method: 'POST',
             headers: {
@@ -128,12 +119,16 @@ async function saveRegistration(regData) {
                 'Accept': 'application/json'
             },
             body: JSON.stringify({
-                proceso_id: procesoId,
+                user_id: regData.userId,
+                proyecto_id: regData.proyecto_id,
+                proceso_codigo: regData.codigo,
                 fecha: regData.fecha,
                 cantidad: regData.cantidad,
                 tiempo: regData.tiempo,
                 cliente: regData.cliente,
-                observaciones: regData.observaciones
+                observaciones: regData.observaciones,
+                tipo: regData.type,
+                novedad_tipo: regData.novelty ? regData.novelty.type : null
             })
         });
 

@@ -26,19 +26,23 @@ Route::middleware('auth:sanctum')->group(function () {
         );
 
         // Procesos (CRUD completo - crear/editar/eliminar solo superadmin)
-        Route::apiResource('/procesos', ProcesoController::class);
+        Route::apiResource('/procesos', ProcesoController::class)->only(['index', 'show']);
+        Route::apiResource('/procesos', ProcesoController::class)->except(['index', 'show'])->middleware('superadmin');
 
         // Proyectos
-        Route::get('/proyectos', [ProyectoController::class , 'index']);
+        Route::apiResource('/proyectos', ProyectoController::class)->only(['index', 'show']);
+        Route::apiResource('/proyectos', ProyectoController::class)->except(['index', 'show'])->middleware('superadmin');
 
         // Registros
         Route::get('/registros', [RegistroController::class , 'index']);
         Route::post('/registros', [RegistroController::class , 'store']);
+        Route::put('/registros/{registro}', [RegistroController::class , 'update']);
+        Route::delete('/registros/{registro}', [RegistroController::class , 'destroy']);
 
         // Dashboard
         Route::get('/dashboard/stats', [DashboardController::class , 'getStats']);
         Route::get('/dashboard/rendimiento', [DashboardController::class , 'getRendimiento']);
 
-        // Usuarios (Solo Superadmin - Lógica en el controlador)
-        Route::apiResource('/usuarios', UserController::class);
+        // Usuarios (Solo Superadmin)
+        Route::apiResource('/usuarios', UserController::class)->middleware('superadmin');
     });
