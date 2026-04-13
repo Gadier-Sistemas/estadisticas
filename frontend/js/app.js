@@ -1,3 +1,14 @@
+// Global 401/403 handler: redirect to login if session expired
+const _originalFetch = window.fetch;
+window.fetch = async function (...args) {
+    const response = await _originalFetch(...args);
+    if (response.status === 401) {
+        sessionStorage.clear();
+        window.location.href = 'login.html';
+    }
+    return response;
+};
+
 // Main Application Logic
 const sampleData = {
     // Sync operators with real users from auth.js
@@ -195,7 +206,7 @@ function updateSampleDataStats() {
 updateSampleDataStats();
 
 // Initialize App
-document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', async function () {
     // Authentication check for Login
     if (!sessionStorage.getItem('isAuthenticated')) {
         window.location.href = 'login.html';
@@ -208,7 +219,7 @@ document.addEventListener('DOMContentLoaded', function () {
     setInterval(updateDateTime, 60000); // Update every minute
 
     // Load initial data from API
-    loadInitialData();
+    await loadInitialData();
 
     loadModules();
     renderAlerts(); // Render alerts after everything is loaded
@@ -250,6 +261,10 @@ function initNavigation() {
                 // Re-render dashboard if selected to show fresh data
                 if (moduleName === 'dashboard') {
                     if (typeof loadDashboardModule === 'function') loadDashboardModule();
+                }
+
+                if (moduleName === 'seguimiento') {
+                    if (typeof loadSeguimientoModule === 'function') loadSeguimientoModule();
                 }
 
                 // Prepare registration form if selected
@@ -446,6 +461,14 @@ function closeUserMenuOnClickOutside(e) {
     if (menu && !menu.contains(e.target) && !btn.contains(e.target)) {
         menu.remove();
         document.removeEventListener('click', closeUserMenuOnClickOutside);
+    }
+}
+
+// Sidebar Toggle Logic
+function toggleSidebar() {
+    const sidebar = document.querySelector('.sidebar');
+    if (sidebar) {
+        sidebar.classList.toggle('collapsed');
     }
 }
 

@@ -34,7 +34,7 @@ class UserController extends Controller
         $user->tipo_documento = $validated['tipoDocumento'] ?? null;
         $user->save();
 
-        return response()->json(['message' => 'Usuario creado exitosamente', 'user' => $user], 201);
+        return response()->json($user, 201);
     }
 
     public function show(User $usuario): JsonResponse
@@ -62,7 +62,7 @@ class UserController extends Controller
 
         $usuario->save();
 
-        return response()->json(['message' => 'Usuario actualizado exitosamente', 'user' => $usuario]);
+        return response()->json($usuario);
     }
 
     public function destroy(User $usuario): JsonResponse

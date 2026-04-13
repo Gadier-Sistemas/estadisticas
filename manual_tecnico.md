@@ -20,17 +20,44 @@ El **Sistema de Estadísticas de Trabajo** es una aplicación web diseñada para
 ## 2. Requisitos e Instalación
 
 ### Requisitos Previos:
-1. **Servidor Web Local**: Se recomienda usar **XAMPP**, WAMP o Laragon (Windows).
-2. **Navegador Moderno**: Google Chrome, Microsoft Edge o Mozilla Firefox.
+1. **PHP 8.2+** instalado y disponible en el PATH.
+2. **MySQL** corriendo localmente (administrar con **MySQL Workbench**).
+3. **Composer** instalado globalmente.
+4. **Navegador Moderno**: Google Chrome, Microsoft Edge o Mozilla Firefox.
 
 ### Pasos para la Instalación:
-1. **Copiar el Proyecto**: Descarga o copia la carpeta `App-estadisticas` dentro del directorio de documentos del servidor web (`nombredeldisco:\xampp\htdocs\`).
-2. **Iniciar Servidor**: Abre el Panel de Control de XAMPP e inicia el módulo **Apache**.
-3. **Acceder a la App**: Abre tu navegador y escribe la siguiente dirección:
-   `http://localhost/App-estadisticas/`
 
-> [!NOTE]
-> La aplicación no requiere una base de datos externa (como MySQL) para funcionar inicialmente, ya que utiliza el **LocalStorage** del navegador para almacenar los datos de forma local.
+#### Base de Datos
+1. Abre **MySQL Workbench** y conéctate a tu instancia local.
+2. La base de datos `db_estadisticas_gadier` debe existir. Si no existe, créala:
+   ```sql
+   CREATE DATABASE db_estadisticas_gadier CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+   ```
+3. Verifica que las credenciales en `backend/.env` coincidan con las tuyas:
+   ```
+   DB_CONNECTION=mysql
+   DB_HOST=127.0.0.1
+   DB_PORT=3306
+   DB_DATABASE=db_estadisticas_gadier
+   DB_USERNAME=root
+   DB_PASSWORD=123456
+   ```
+
+#### Backend (API Laravel)
+Desde la carpeta `backend/`:
+```bash
+composer install
+php artisan migrate --seed   # crea tablas y datos iniciales
+php artisan serve --port=8001
+```
+La API queda disponible en `http://localhost:8001/api`.
+
+#### Frontend
+Desde la carpeta `frontend/`, servir con cualquier servidor HTTP estático en el puerto **8080**:
+```bash
+php -S localhost:8080
+```
+Acceder en el navegador: `http://localhost:8080`
 
 ---
 
@@ -41,12 +68,12 @@ Al entrar por primera vez, verás la pantalla de login. El sistema cuenta con do
 
 | Usuario | Contraseña | Rol | Permisos |
 | :--- | :--- | :--- | :--- |
-| `admin` | `admin` | Superadmin | Acceso total a todos los módulos. |
-| `operario` | `operario` | Operario | Acceso a Registro, Dashboard y Usuarios (limitado). |
+| `admin` | `admin123` | Superadmin | Acceso total a todos los módulos. |
+| `operario1` | `123456` | Operario | Acceso a Registro, Dashboard y Usuarios (limitado). |
 
 ### Seguridad:
 - **Cierre de Sesión por Inactividad**: El sistema cerrará la sesión automáticamente después de **5 minutos** de inactividad para proteger la información.
-- **Persistencia**: Los datos se guardan en el navegador. Si borras el "Historial de Navegación" o los "Datos de Sitios", se podrían perder los registros locales.
+- **Persistencia**: Los datos se guardan en la base de datos MySQL. El navegador solo almacena el token de sesión de forma temporal.
 
 ---
 
@@ -103,12 +130,13 @@ Donde la **Producción Esperada** se calcula así:
 ## 6. Mantenimiento y Soporte
 
 ### ¿Cómo respaldar la información?
-Como los datos residen en el navegador, se recomienda usar el módulo de **Reportes** frecuentemente para exportar la información a Excel como copia de seguridad externa.
+Los datos residen en MySQL. Realiza backups periódicos desde MySQL Workbench (`Server > Data Export`) o usa el módulo de **Reportes** para exportar a Excel como copia adicional.
 
 ### Solución de Problemas Comunes:
-- **No carga la página**: Verifica que Apache esté en verde en el panel de XAMPP.
+- **No carga la página**: Verifica que el backend esté corriendo (`php artisan serve --port=8001`) y el frontend en el puerto 8080.
 - **Error de "Acceso Denegado"**: Asegúrate de que el usuario esté marcado como "Activo" en el módulo de Usuarios.
-- **Los datos desaparecieron**: Esto ocurre si se limpia el almacenamiento local del navegador. Siempre realiza exportaciones a Excel.
+- **Error de conexión a la BD**: Verifica que MySQL esté corriendo y que las credenciales en `backend/.env` sean correctas.
+- **Error CORS**: Si accedes desde otra IP en la red, agrega esa IP a `backend/config/cors.php` en `allowed_origins`.
 
 ---
 *Manual generado para GADIER Sistemas Profesionales - 2026*

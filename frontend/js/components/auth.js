@@ -91,7 +91,7 @@ function getAllowedModules() {
     const user = getCurrentUser();
 
     if (user.rol === 'superadmin') {
-        return ['dashboard', 'registro', 'procesos', 'usuarios', 'reportes', 'consolidado'];
+        return ['dashboard', 'registro', 'procesos', 'usuarios', 'reportes', 'consolidado', 'seguimiento'];
     }
 
     if (user.rol === 'operario') {

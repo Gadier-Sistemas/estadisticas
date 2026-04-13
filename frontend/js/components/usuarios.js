@@ -69,7 +69,7 @@ function renderAdminUserTable(container) {
                         <div class="form-group">
                             <label for="usuarioPassword">Contraseña</label>
                             <div class="password-input-wrapper">
-                                <input type="text" id="usuarioPassword" placeholder="Contraseña de acceso" required>
+                                <input type="password" id="usuarioPassword" placeholder="Contraseña de acceso">
                                 <button type="button" class="btn-icon-small" onclick="generarPassword()" title="Generar Contraseña">
                                     🎲
                                 </button>
@@ -138,7 +138,7 @@ function renderAdminUserTable(container) {
                         </div>
                     </div>
                     
-                    <div class="usuarios-grid" id="usuariosGrid">
+                    <div class="usuarios-grid" id="usuariosGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem; margin-top: 1.5rem;">
                         ${renderUsuariosGrid()}
                     </div>
                 </div>
@@ -309,34 +309,35 @@ function renderUsuariosGrid() {
     }
 
     return users.map(user => `
-        <div class="usuario-card ${!user.activo ? 'usuario-inactive' : ''}" data-user-id="${user.id}">
-            <div class="usuario-card-header">
-                <div class="usuario-avatar">
+        <div class="usuario-card ${!user.activo ? 'usuario-inactive' : ''}" data-user-id="${user.id}" style="background: white; border: 1px solid #e2e8f0; border-radius: 10px; padding: 1.25rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); display: flex; flex-direction: column; gap: 1rem; position: relative; overflow: hidden; opacity: ${user.activo ? '1' : '0.6'};">
+            ${user.activo ? '' : '<div style="position: absolute; top:0; left:0; width:100%; height:100%; background:rgba(241,245,249,0.5); z-index:1; pointer-events:none;"></div>'}
+            <div class="usuario-card-header" style="display: flex; align-items: center; gap: 1rem; border-bottom: 1px solid #f1f5f9; padding-bottom: 1rem;">
+                <div class="usuario-avatar" style="width: 50px; height: 50px; background: ${user.rol === 'superadmin' ? 'var(--secondary-color)' : 'var(--primary-color)'}; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; font-weight: 600; flex-shrink: 0;">
                     ${getInitials(user.name, user.apellido)}
                 </div>
-                <div class="usuario-info">
-                    <h4>${user.name} ${user.apellido}</h4>
-                    <span class="usuario-rol-badge rol-${user.rol}">${capitalizeFirst(user.rol === 'superadmin' ? 'Administrador' : user.rol)}</span>
+                <div class="usuario-info" style="flex: 1; min-width: 0;">
+                    <h4 style="margin: 0; font-size: 1.1rem; color: var(--text-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${user.name} ${user.apellido}</h4>
+                    <span style="font-size: 0.75rem; padding: 0.2rem 0.5rem; background: #e2e8f0; border-radius: 4px; color: #475569; display: inline-block; margin-top: 0.25rem;">${capitalizeFirst(user.rol === 'superadmin' ? 'Administrador' : user.rol)}</span>
                 </div>
-                <div class="usuario-status">
-                    <span class="status-badge ${user.activo ? 'status-active' : 'status-inactive'}">
+                <div class="usuario-status" style="flex-shrink: 0;">
+                    <span style="font-size: 0.75rem; padding: 0.2rem 0.5rem; border-radius: 12px; background: ${user.activo ? '#dcfce7' : '#fee2e2'}; color: ${user.activo ? '#166534' : '#991b1b'}; font-weight: 600;">
                         ${user.activo ? '● Activo' : '○ Inactivo'}
                     </span>
                 </div>
             </div>
             
-            <div class="usuario-card-body">
-                <div class="usuario-detail">
-                    <span class="usuario-detail-icon">🆔</span>
-                    <span class="usuario-detail-text"><strong>${user.tipoDocumento || 'CC'} ${user.cedula || user.codigo || 'N/A'}</strong></span>
+            <div class="usuario-card-body" style="display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.9rem; color: var(--text-secondary);">
+                <div class="usuario-detail" style="display: flex; align-items: center; gap: 0.5rem;">
+                    <span class="usuario-detail-icon" style="opacity: 0.7;">🆔</span>
+                    <span class="usuario-detail-text" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><strong>${user.tipoDocumento || 'CC'} ${user.cedula || user.codigo || 'N/A'}</strong></span>
                 </div>
-                <div class="usuario-detail">
-                    <span class="usuario-detail-icon">👤</span>
-                    <span class="usuario-detail-text">${user.username || 'Sin usuario'}</span>
+                <div class="usuario-detail" style="display: flex; align-items: center; gap: 0.5rem;">
+                    <span class="usuario-detail-icon" style="opacity: 0.7;">👤</span>
+                    <span class="usuario-detail-text" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${user.username || 'Sin usuario'}</span>
                 </div>
             </div>
             
-            <div class="usuario-card-footer">
+            <div class="usuario-card-footer" style="padding-top: 1rem; border-top: 1px dotted #e2e8f0; display: flex; justify-content: flex-end; gap: 0.5rem; position: relative; z-index: 2;">
                 <button class="btn-icon-small" onclick="editarUsuario(${user.id})" title="Editar">
                     ✏️
                 </button>
@@ -395,44 +396,50 @@ function initUsuariosHandlers() {
             (user.username && user.username.toLowerCase().includes(searchTerm))
         );
 
-        // Re-render grid with local filtered data (mocking the render function behavior)
+        // Re-render grid con datos filtrados
         const grid = document.getElementById('usuariosGrid');
         if (filteredUsers.length === 0) {
-            grid.innerHTML = '<div class="no-results">No se encontraron usuarios</div>';
+            grid.innerHTML = '<div class="no-results" style="padding: 2rem; text-align: center; color: var(--text-muted); width: 100%;">No se encontraron usuarios</div>';
         } else {
             grid.innerHTML = filteredUsers.map(user => `
-                <div class="usuario-card ${!user.activo ? 'usuario-inactive' : ''}" data-user-id="${user.id}">
-                    <div class="usuario-card-header">
-                        <div class="usuario-avatar">
+                <div class="usuario-card ${!user.activo ? 'usuario-inactive' : ''}" data-user-id="${user.id}" style="background: white; border: 1px solid #e2e8f0; border-radius: 10px; padding: 1.25rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); display: flex; flex-direction: column; gap: 1rem; position: relative; overflow: hidden; opacity: ${user.activo ? '1' : '0.6'};">
+                    ${user.activo ? '' : '<div style="position: absolute; top:0; left:0; width:100%; height:100%; background:rgba(241,245,249,0.5); z-index:1; pointer-events:none;"></div>'}
+                    <div class="usuario-card-header" style="display: flex; align-items: center; gap: 1rem; border-bottom: 1px solid #f1f5f9; padding-bottom: 1rem;">
+                        <div class="usuario-avatar" style="width: 50px; height: 50px; background: ${user.rol === 'superadmin' ? 'var(--secondary-color)' : 'var(--primary-color)'}; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; font-weight: 600; flex-shrink: 0;">
                             ${getInitials(user.name, user.apellido)}
                         </div>
-                        <div class="usuario-info">
-                            <h4>${user.name} ${user.apellido}</h4>
-                            <span class="usuario-rol-badge rol-${user.rol}">${capitalizeFirst(user.rol === 'superadmin' ? 'Administrador' : user.rol)}</span>
+                        <div class="usuario-info" style="flex: 1; min-width: 0;">
+                            <h4 style="margin: 0; font-size: 1.1rem; color: var(--text-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${user.name} ${user.apellido}</h4>
+                            <span style="font-size: 0.75rem; padding: 0.2rem 0.5rem; background: #e2e8f0; border-radius: 4px; color: #475569; display: inline-block; margin-top: 0.25rem;">${capitalizeFirst(user.rol === 'superadmin' ? 'Administrador' : user.rol)}</span>
                         </div>
-                        <div class="usuario-status">
-                            <span class="status-badge ${user.activo ? 'status-active' : 'status-inactive'}">
+                        <div class="usuario-status" style="flex-shrink: 0;">
+                            <span style="font-size: 0.75rem; padding: 0.2rem 0.5rem; border-radius: 12px; background: ${user.activo ? '#dcfce7' : '#fee2e2'}; color: ${user.activo ? '#166534' : '#991b1b'}; font-weight: 600;">
                                 ${user.activo ? '● Activo' : '○ Inactivo'}
                             </span>
                         </div>
                     </div>
                     
-                    <div class="usuario-card-body">
-                         <div class="usuario-detail">
-                            <span class="usuario-detail-icon">🆔</span>
-                            <span class="usuario-detail-text"><strong>${user.tipoDocumento || 'CC'} ${user.cedula || user.codigo || 'N/A'}</strong></span>
+                    <div class="usuario-card-body" style="display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.9rem; color: var(--text-secondary);">
+                        <div class="usuario-detail" style="display: flex; align-items: center; gap: 0.5rem;">
+                            <span class="usuario-detail-icon" style="opacity: 0.7;">🆔</span>
+                            <span class="usuario-detail-text" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><strong>${user.tipoDocumento || 'CC'} ${user.cedula || user.codigo || 'N/A'}</strong></span>
                         </div>
-                        <div class="usuario-detail">
-                            <span class="usuario-detail-icon">👤</span>
-                            <span class="usuario-detail-text">${user.username || 'Sin usuario'}</span>
+                        <div class="usuario-detail" style="display: flex; align-items: center; gap: 0.5rem;">
+                            <span class="usuario-detail-icon" style="opacity: 0.7;">👤</span>
+                            <span class="usuario-detail-text" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${user.username || 'Sin usuario'}</span>
                         </div>
                     </div>
                     
-                    <div class="usuario-card-footer">
+                    <div class="usuario-card-footer" style="padding-top: 1rem; border-top: 1px dotted #e2e8f0; display: flex; justify-content: flex-end; gap: 0.5rem; position: relative; z-index: 2;">
                         <button class="btn-icon-small" onclick="editarUsuario(${user.id})" title="Editar">✏️</button>
                         <button class="btn-icon-small" onclick="toggleUsuarioStatus(${user.id})" title="${user.activo ? 'Desactivar' : 'Activar'}">
                             ${user.activo ? '🔒' : '🔓'}
                         </button>
+                        ${user.rol !== 'superadmin' ? `
+                        <button class="btn-icon-small btn-danger" onclick="eliminarUsuario(${user.id})" title="Eliminar">
+                            🗑️
+                        </button>
+                        ` : ''}
                     </div>
                 </div>
             `).join('');

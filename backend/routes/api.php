@@ -10,7 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 // Rutas Públicas
-Route::post('/login', [AuthController::class , 'login'])->name('login');
+Route::post('/login', [AuthController::class , 'login'])->middleware('throttle:10,1')->name('login');
 
 // Ruta de fallback para cuando Laravel intenta redirigir a 'login' por falta de token
 Route::get('/login', function () {

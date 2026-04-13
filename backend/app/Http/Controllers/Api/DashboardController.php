@@ -65,6 +65,11 @@ class DashboardController extends Controller
      */
     public function getRendimiento(Request $request)
     {
+        $request->validate([
+            'fecha'   => 'nullable|date_format:Y-m-d',
+            'user_id' => 'nullable|integer|exists:users,id',
+        ]);
+
         $fecha = $request->get('fecha', now()->toDateString());
         $userId = $request->get('user_id');
 

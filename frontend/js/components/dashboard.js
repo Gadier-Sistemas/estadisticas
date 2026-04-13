@@ -245,20 +245,20 @@ function loadAdminDashboard() {
         return `
             <tr>
                 <td>
-                    <div class="user-info-cell">
-                        <div class="user-avatar-small">${getInitials(op.name, op.apellido)}</div>
+                    <div class="user-info-cell" style="display: flex; align-items: center; gap: 1rem;">
+                        <div class="user-avatar-small" style="background: #1e293b; color: white; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-weight: bold;">${getInitials(op.name, op.apellido)}</div>
                         <div>
-                            <div class="font-medium">${op.name} ${op.apellido || ''}</div>
-                            <div class="text-xs text-muted">${op.email || ''}</div>
+                            <div class="font-medium" style="color: var(--text-primary); font-weight: 600;">${op.name} ${op.apellido || ''}</div>
+                            <div class="text-xs" style="color: var(--text-secondary);">${op.email || 'Sin correo asignado'}</div>
                         </div>
                     </div>
                 </td>
-                <td><span class="status-badge ${op.activo ? 'status-active' : 'status-inactive'}">${op.activo ? 'Activo' : 'Inactivo'}</span></td>
-                <td>${opRegs.length}</td>
-                <td>${formatNumber(totalUnits)}</td>
-                <td>${lastDate}</td>
+                <td><span class="badge ${op.activo ? 'badge-primary' : 'badge-secondary'}">${op.activo ? 'Activo' : 'Inactivo'}</span></td>
+                <td><span style="font-weight: 500;">${opRegs.length}</span> registros</td>
+                <td><span style="font-weight: 600; color: #b91c1c;">${formatNumber(totalUnits)}</span></td>
+                <td style="color: var(--text-secondary); font-size: 0.9em;">${lastDate}</td>
                 <td>
-                    <button class="btn-icon-small" onclick="viewOperatorStats(${op.id})" title="Ver Detalle">📊</button>
+                    <button class="btn btn-secondary" onclick="viewOperatorStats(${op.id})" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;">📊 Ver Historial</button>
                 </td>
             </tr>
         `;
@@ -346,7 +346,10 @@ function loadAdminDashboard() {
 
         <div class="charts-grid" style="margin-top: 2rem;">
             <div class="chart-card">
-                <h3>Producción Semanal</h3>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                    <h3>Producción Semanal (Registro Real)</h3>
+                    <span class="badge" style="background: #fee2e2; color: #991b1b;">Unidades Reales</span>
+                </div>
                 <canvas id="dashboardWeeklyChart"></canvas>
             </div>
             <div class="chart-card">
@@ -457,17 +460,56 @@ function getTotalHours() {
     }, 0).toFixed(0);
 }
 
-function initDashboardCharts() {
+async function initDashboardCharts() {
+    const dayNames = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+    const chartColors = [
+        'rgba(153, 15, 12, 0.9)',
+        'rgba(59, 130, 246, 0.8)',
+        'rgba(16, 185, 129, 0.8)',
+        'rgba(245, 158, 11, 0.8)',
+        'rgba(139, 92, 246, 0.8)'
+    ];
+
+    let weeklyLabels = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+    let weeklyData = [0, 0, 0, 0, 0, 0];
+    let proyectoLabels = [];
+    let proyectoData = [];
+
+    try {
+        const token = sessionStorage.getItem('authToken');
+        const response = await fetch(`${API_URL}/dashboard/stats`, {
+            headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' }
+        });
+        if (response.ok) {
+            const stats = await response.json();
+
+            if (stats.produccion_semanal && stats.produccion_semanal.length) {
+                weeklyLabels = stats.produccion_semanal.map(item => {
+                    const d = new Date(item.date + 'T00:00:00');
+                    return dayNames[d.getDay()];
+                });
+                weeklyData = stats.produccion_semanal.map(item => item.total);
+            }
+
+            if (stats.produccion_por_proyecto && stats.produccion_por_proyecto.length) {
+                proyectoLabels = stats.produccion_por_proyecto.map(p => p.nombre);
+                proyectoData = stats.produccion_por_proyecto.map(p => p.total);
+            }
+        }
+    } catch (e) {
+        console.error('Error cargando datos para charts:', e);
+    }
+
     // Weekly Production Chart
     const weeklyCtx = document.getElementById('dashboardWeeklyChart');
     if (weeklyCtx) {
         new Chart(weeklyCtx, {
             type: 'bar',
             data: {
-                labels: ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'],
+                labels: weeklyLabels,
                 datasets: [{
-                    label: 'Unidades Procesadas',
-                    data: [420, 550, 480, 620, 590, 650],
+                    label: 'Producción Real (Unidades)',
+                    data: weeklyData,
                     backgroundColor: 'rgba(153, 15, 12, 0.8)',
                     borderRadius: 6
                 }]
@@ -475,40 +517,25 @@ function initDashboardCharts() {
             options: {
                 responsive: true,
                 maintainAspectRatio: true,
-                plugins: {
-                    legend: { display: false }
-                },
+                plugins: { legend: { display: false } },
                 scales: {
-                    y: {
-                        beginAtZero: true,
-                        grid: { color: 'rgba(0, 0, 0, 0.05)' },
-                        ticks: { color: '#616161' }
-                    },
-                    x: {
-                        grid: { display: false },
-                        ticks: { color: '#616161' }
-                    }
+                    y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { color: '#616161' } },
+                    x: { grid: { display: false }, ticks: { color: '#616161' } }
                 }
             }
         });
     }
 
-    // Top Processes Chart
+    // Top Proyectos Chart
     const processesCtx = document.getElementById('dashboardProcessesChart');
     if (processesCtx) {
         new Chart(processesCtx, {
             type: 'doughnut',
             data: {
-                labels: ['Digitalización', 'Organización', 'Custodia', 'Inspección', 'Otros'],
+                labels: proyectoLabels.length ? proyectoLabels : ['Sin datos'],
                 datasets: [{
-                    data: [35, 25, 20, 12, 8],
-                    backgroundColor: [
-                        'rgba(153, 15, 12, 0.9)',
-                        'rgba(97, 97, 97, 0.8)',
-                        'rgba(66, 66, 66, 0.8)',
-                        'rgba(117, 117, 117, 0.8)',
-                        'rgba(158, 158, 158, 0.8)'
-                    ],
+                    data: proyectoData.length ? proyectoData : [1],
+                    backgroundColor: chartColors.slice(0, Math.max(proyectoData.length, 1)),
                     borderWidth: 0
                 }]
             },
@@ -516,14 +543,7 @@ function initDashboardCharts() {
                 responsive: true,
                 maintainAspectRatio: true,
                 plugins: {
-                    legend: {
-                        position: 'bottom',
-                        labels: {
-                            color: '#616161',
-                            padding: 15,
-                            font: { size: 12 }
-                        }
-                    }
+                    legend: { position: 'bottom', labels: { color: '#616161', padding: 15, font: { size: 12 } } }
                 },
                 cutout: '65%'
             }

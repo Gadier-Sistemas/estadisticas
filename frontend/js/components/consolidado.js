@@ -10,24 +10,26 @@ function loadConsolidadoModule() {
             <p class="module-description">Análisis de rendimiento Real vs Esperado — Basado en la fórmula de 540 minutos</p>
         </div>
 
-        <div class="reportes-filters">
-            <div class="form-group">
-                <label>Operario</label>
-                <select id="consolidadoOperario">
-                    <option value="">Todos los operarios</option>
-                    ${(window.getUsers ? getUsers() : []).filter(u => u.rol === 'operario').map(op => 
-                        `<option value="${op.id}">${op.name} ${op.apellido || ''}</option>`
-                    ).join('')}
-                </select>
-            </div>
-            <div class="form-group">
-                <label>Fecha</label>
-                <input type="date" id="consolidadoFecha" value="${new Date().toISOString().split('T')[0]}">
-            </div>
-            <div class="form-group" style="align-self: end;">
-                <button class="btn btn-primary" onclick="generateConsolidado()">
-                    📊 Analizar Rendimiento
-                </button>
+        <div class="form-card" style="margin-bottom: var(--spacing-2xl); background: #f8fafc; border: 1px dashed var(--primary-color);">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; align-items: flex-end;">
+                <div>
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--text-secondary);">Seleccionar Operario</label>
+                    <select id="consolidadoOperario" style="width: 100%; padding: 0.6rem; border: 1px solid #cbd5e1; border-radius: 6px;">
+                        <option value="">Filtro Global (Todos)</option>
+                        ${(window.getUsers ? getUsers() : []).filter(u => u.rol === 'operario').map(op => 
+                            `<option value="${op.id}">${op.name} ${op.apellido || ''}</option>`
+                        ).join('')}
+                    </select>
+                </div>
+                <div>
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--text-secondary);">Fecha de Análisis</label>
+                    <input type="date" id="consolidadoFecha" value="${new Date().toISOString().split('T')[0]}" style="width: 100%; padding: 0.6rem; border: 1px solid #cbd5e1; border-radius: 6px;">
+                </div>
+                <div>
+                    <button class="btn btn-primary" onclick="generateConsolidado()" style="width: 100%; padding: 0.75rem; justify-content: center;">
+                        📊 Calcular Rendimiento
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -205,9 +207,9 @@ function renderResumenTable(resumen) {
 
     container.innerHTML = `
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-lg);">
-            <h3>📋 Resumen por Proceso (Real vs Esperado)</h3>
-            <button class="btn btn-success" onclick="exportConsolidadoExcel()">
-                📥 Exportar
+            <h3 style="margin: 0; color: var(--primary-color);">📋 Resumen Acumulado por Proceso</h3>
+            <button class="btn btn-success" onclick="exportConsolidadoExcel()" style="padding: 0.5rem 1rem; font-size: 0.9rem;">
+                📥 Exportar Excel
             </button>
         </div>
         <div class="table-container">
@@ -257,7 +259,9 @@ function renderDetalleTable(detalle) {
     }).join('');
 
     container.innerHTML = `
-        <h3>📝 Detalle por Registro</h3>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-lg);">
+            <h3 style="margin: 0; color: var(--primary-color);">📝 Detalle de Productividad por Registro</h3>
+        </div>
         <div class="table-container">
             <table class="data-table">
                 <thead>

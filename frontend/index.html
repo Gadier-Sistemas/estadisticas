@@ -8,10 +8,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
-        href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="assets/css/styles.css">
-    <link rel="stylesheet" href="assets/css/login.css">
 </head>
 
 <body>
@@ -19,12 +18,15 @@
     <header class="main-header">
         <div class="header-content">
             <div class="logo-section">
-                <div class="logo-icon">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path
-                            d="M9 11H15M9 15H15M17 21H7C5.89543 21 5 20.1046 5 19V5C5 3.89543 5.89543 3 7 3H12.5858C12.851 3 13.1054 3.10536 13.2929 3.29289L18.7071 8.70711C18.8946 8.89464 19 9.149 19 9.41421V19C19 20.1046 18.1046 21 17 21Z"
-                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                <button class="btn-icon" onclick="toggleSidebar()" title="Colapsar Menú" style="margin-right: 0.5rem; background: transparent; border: none; cursor: pointer; color: var(--text-primary);">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="3" y1="12" x2="21" y2="12"></line>
+                        <line x1="3" y1="6" x2="21" y2="6"></line>
+                        <line x1="3" y1="18" x2="21" y2="18"></line>
                     </svg>
+                </button>
+                <div class="logo-icon" style="background: transparent;">
+                    <img src="assets/img/logocolor-removebg-preview.png" alt="GADIER Logo" style="height: 42px; width: auto; max-width: 150px; object-fit: contain;">
                 </div>
                 <div class="logo-text">
                     <h1>Estadísticas de Trabajo</h1>
@@ -107,6 +109,19 @@
                     </svg>
                     <span>Consolidado</span>
                 </a>
+                <a href="#" class="nav-item" data-module="seguimiento">
+                    <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round" />
+                        <circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="2" />
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round" />
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                    <span>Seguimiento</span>
+                </a>
             </nav>
             <div class="sidebar-footer">
                 <div class="version-info">
@@ -135,6 +150,9 @@
 
             <!-- Consolidado Module -->
             <div id="module-consolidado" class="module"></div>
+
+            <!-- Seguimiento Module -->
+            <div id="module-seguimiento" class="module"></div>
         </main>
     </div>
 
@@ -155,6 +173,7 @@
     <script src="js/components/usuarios.js"></script>
     <script src="js/components/reportes.js"></script>
     <script src="js/components/consolidado.js"></script>
+    <script src="js/components/seguimiento.js"></script>
     <script src="js/app.js"></script>
 </body>
 

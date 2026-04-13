@@ -18,7 +18,7 @@ class ProyectoController extends Controller
     public function store(ProyectoStoreRequest $request): JsonResponse
     {
         $proyecto = Proyecto::create($request->validated());
-        return response()->json(['message' => 'Proyecto creado', 'proyecto' => $proyecto], 201);
+        return response()->json($proyecto, 201);
     }
 
     public function show(Proyecto $proyecto): JsonResponse
@@ -29,7 +29,7 @@ class ProyectoController extends Controller
     public function update(ProyectoUpdateRequest $request, Proyecto $proyecto): JsonResponse
     {
         $proyecto->update($request->validated());
-        return response()->json(['message' => 'Proyecto actualizado', 'proyecto' => $proyecto]);
+        return response()->json($proyecto);
     }
 
     public function destroy(Proyecto $proyecto): JsonResponse

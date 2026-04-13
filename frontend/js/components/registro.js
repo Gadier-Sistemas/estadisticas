@@ -152,17 +152,10 @@ function loadRegistroModule() {
                             <input type="number" id="metaProcesos" min="1" value="1" style="width: 80px; text-align: center; font-size: 1.25rem; font-weight: 700; border: 1px solid var(--primary-color); border-radius: 8px; padding: 0.25rem;" onchange="saveDailyTarget(this.value)">
                         </div>
 
-                        <!-- Full Absence Toggle -->
-                        <div style="grid-column: 1 / -1; margin-bottom: 1rem; padding: 1rem; background: #fff1f2; border: 1px solid #fda4af; border-radius: 8px; display: flex; align-items: center; gap: 1rem;">
-                            <input type="checkbox" id="fullAbsenceToggle" onchange="toggleFullNoveltyMode(this.checked)" style="width: 20px; height: 20px;">
-                            <div>
-                                <label for="fullAbsenceToggle" style="font-weight: 700; color: #be123c; cursor: pointer;">Día No Laborado (Incapacidad Total, Licencia, etc.)</label>
-                                <p class="text-xs text-muted" style="margin: 0;">Marque esta casilla si no hubo producción hoy.</p>
-                            </div>
-                        </div>
+
 
                         <!-- Common Fields (Always visible) -->
-                        <div class="form-group full-width">
+                        <div class="form-group full-width" style="display: none;">
                             <label for="operario">Nombre y Apellido</label>
                             <select id="operario" required ${isOperario ? 'disabled' : ''}>
                                 ${!isOperario ? '<option value="">Seleccionar operario...</option>' : ''}
@@ -175,7 +168,7 @@ function loadRegistroModule() {
                             ${isOperario ? `<input type="hidden" id="operarioHidden" value="${user.id}">` : ''}
                         </div>
 
-                        <div class="form-group full-width">
+                        <div class="form-group">
                             <label for="fecha" style="display: flex; justify-content: space-between; align-items: center;">
                                 <span>Fecha</span>
                                 <span id="fechaStatus" style="font-size: 0.75rem; color: var(--secondary-color); font-weight: 600;"></span>
@@ -198,10 +191,10 @@ function loadRegistroModule() {
 
                             <div class="form-group">
                                 <label for="codigo">Proceso</label>
-                                <select id="codigo" required onchange="handleProcessChange(this.value)">
+                                <select id="codigo" required onchange="handleProcessChange(this.value); calculatePerformance();">
                                     <option value="">Seleccionar proceso...</option>
                                     ${sampleData.processes.map(proc =>
-        `<option value="${proc.code}">${proc.code} - ${proc.name}</option>`
+        `<option value="${proc.codigo || proc.code}">${proc.codigo || proc.code} - ${proc.nombre || proc.name}</option>`
     ).join('')}
                                 </select>
                             </div>
@@ -227,7 +220,7 @@ function loadRegistroModule() {
 
                             <div class="form-group">
                                 <label for="cantidad">Cantidad Total</label>
-                                <input type="number" id="cantidad" min="1" placeholder="0" required>
+                                <input type="number" id="cantidad" min="1" placeholder="0" required oninput="calculatePerformance()">
                                 <p class="text-xs text-muted" id="cantidadHelp">Suma total de unidades.</p>
                             </div>
 
@@ -242,45 +235,53 @@ function loadRegistroModule() {
                                         <input type="time" id="horaFin" required onchange="calculateDuration()">
                                     </div>
                                 </div>
-                                <div id="durationDisplay" style="margin-top: 0.25rem; font-weight: 600; color: var(--secondary-color); font-size: 0.85rem; display: none;">
-                                    Total: <span id="calculatedTime">0h 0m</span>
+                                <div id="durationDisplay" style="margin-top: 0.25rem; font-weight: 600; color: var(--secondary-color); font-size: 0.85rem; display: flex; flex-direction: column; gap: 0.25rem; display: none;">
+                                    <div>Total: <span id="calculatedTime">0h 0m</span></div>
+                                    <!-- Badge de rendimiento inyectado aquí -->
                                 </div>
                                 <input type="hidden" id="tiempoCalculado" value="00:00">
                             </div>
                         </div>
 
-                        <!-- Novelty / Support Section (Always visible but logic changes) -->
-                        <div class="form-group full-width" style="border-top: 2px dashed #eee; padding-top: 1.5rem; margin-top: 1rem;">
-                            <div style="margin-bottom: 1rem;">
-                                <h4 style="margin: 0; display: flex; align-items: center; gap: 0.5rem;">
-                                    📄 Reportar Novedad / Soporte
-                                    <span class="text-xs text-muted" style="font-weight: 400;">(Opcional si hay producción)</span>
-                                </h4>
+                        <!-- Novelty / Support Section (Collapse toggle) -->
+                        <div class="form-group full-width" style="border-top: 2px dashed #e2e8f0; padding-top: 1.5rem; margin-top: 1rem;">
+                            
+                            <h4 style="margin-bottom: 1rem; color: var(--text-primary);">Novedades y Ausencias</h4>
+                            
+                            <!-- Full Absence Toggle moved here -->
+                            <div style="margin-bottom: 1rem; padding: 1rem; background: #fff1f2; border: 1px solid #fda4af; border-radius: 8px; display: flex; align-items: center; gap: 1rem;">
+                                <input type="checkbox" id="fullAbsenceToggle" onchange="toggleFullNoveltyMode(this.checked)" style="width: 20px; height: 20px;">
+                                <div>
+                                    <label for="fullAbsenceToggle" style="font-weight: 700; color: #be123c; cursor: pointer;">Día No Laborado (Incapacidad Total, Licencia, etc.)</label>
+                                    <p class="text-xs text-muted" style="margin: 0;">Marque esta casilla si no hubo producción hoy.</p>
+                                </div>
                             </div>
 
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                                <div>
-                                    <label for="noveltyType">Tipo de Novedad</label>
-                                    <select id="noveltyType">
-                                        <option value="">Ninguna / Seleccionar...</option>
-                                        <option value="Incapacidad">Incapacidad Médica</option>
-                                        <option value="Cita Médica">Cita Médica</option>
-                                        <option value="Permiso">Permiso Personal</option>
-                                        <option value="Vacaciones">Vacaciones</option>
-                                        <option value="Licencia">Licencia</option>
-                                        <option value="Falta Justificada">Falta Justificada</option>
-                                        <option value="Otro">Otro</option>
-                                    </select>
+                            <div id="noveltyContent" style="display: none; margin-top: 1rem;">
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                                    <div>
+                                        <label for="noveltyType">Tipo de Novedad</label>
+                                        <select id="noveltyType">
+                                            <option value="">Ninguna / Seleccionar...</option>
+                                            <option value="Incapacidad">Incapacidad Médica</option>
+                                            <option value="Cita Médica">Cita Médica</option>
+                                            <option value="Permiso">Permiso Personal</option>
+                                            <option value="Vacaciones">Vacaciones</option>
+                                            <option value="Licencia">Licencia</option>
+                                            <option value="Falta Justificada">Falta Justificada</option>
+                                            <option value="Otro">Otro</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label for="noveltyFile">Adjuntar Archivo</label>
+                                        <input type="file" id="noveltyFile" accept=".pdf,.png,.jpg,.jpeg">
+                                        <p class="text-xs text-muted">PDF o Imagen (Máx. 5MB)</p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <label for="noveltyFile">Adjuntar Archivo</label>
-                                    <input type="file" id="noveltyFile" accept=".pdf,.png,.jpg,.jpeg">
-                                    <p class="text-xs text-muted">PDF o Imagen (Máx. 5MB)</p>
+                                <div class="form-group full-width" style="margin-top: 1rem;">
+                                    <label for="observaciones">Observaciones</label>
+                                    <textarea id="observaciones" rows="3" placeholder="Notas adicionales (opcional)"></textarea>
                                 </div>
-                            </div>
-                             <div class="form-group full-width">
-                                <label for="observaciones">Observaciones</label>
-                                <textarea id="observaciones" rows="3" placeholder="Notas adicionales (opcional)"></textarea>
                             </div>
                         </div>
 
@@ -297,29 +298,28 @@ function loadRegistroModule() {
             </div>
 
             <div class="registro-reference-section">
-                <div class="reference-card">
-                    <div class="reference-header">
-                        <h3>📋 Tabla de Procesos</h3>
-                        <div class="filter-tabs">
-                            <button class="filter-tab active" data-filter="all">Todos</button>
-                            <button class="filter-tab" data-filter="CUSTODIA">Custodia</button>
-                            <button class="filter-tab" data-filter="OPERATIVO">Operativo</button>
-                        </div>
+                <div class="form-card">
+                    <div class="form-header">
+                        <h3>📋 Mis Registros de Hoy</h3>
+                        <p class="text-xs text-muted">Actividades reportadas en la jornada actual</p>
                     </div>
                     
                     <div class="table-container">
-                        <table class="data-table" id="processReferenceTable">
+                        <table class="data-table" id="todayRegistrationsTable">
                             <thead>
                                 <tr>
-                                    <th>Código</th>
-                                    <th>Subproceso</th>
-                                    <th>Unidad</th>
+                                    <th>Proceso / Detalle</th>
+                                    <th>Ctd.</th>
+                                    <th>Tiempo</th>
                                 </tr>
                             </thead>
-                            <tbody id="processTableBody">
-                                ${renderProcessTable('all')}
+                            <tbody id="todayRegistrationsBody">
+                                <!-- Loads dynamically via renderTodayRegistrations() -->
                             </tbody>
                         </table>
+                    </div>
+                    <div style="margin-top: 1.5rem; text-align: center;">
+                        <button class="btn btn-secondary" onclick="document.querySelector('[data-module=\\'dashboard\\']').click()">📊 Ver Mi Historial Completo</button>
                     </div>
                 </div>
             </div>
@@ -347,6 +347,7 @@ function loadRegistroModule() {
     }
 
     loadCurrentTarget();
+    renderTodayRegistrations();
 }
 
 function renderProcessTable(filter = 'all') {
@@ -418,6 +419,8 @@ function toggleFullNoveltyMode(checked) {
 
         // Make Novelty type required
         document.getElementById('noveltyType').setAttribute('required', 'true');
+        // Mostrar novedades
+        document.getElementById('noveltyContent').style.display = 'block';
     } else {
         prodFields.style.display = 'contents';
         // Restore required
@@ -428,6 +431,10 @@ function toggleFullNoveltyMode(checked) {
         });
 
         document.getElementById('noveltyType').removeAttribute('required');
+        // Ocultar novedades
+        document.getElementById('noveltyContent').style.display = 'none';
+        // Limpiar seleccion de Novedad
+        document.getElementById('noveltyType').value = "";
     }
 }
 
@@ -453,10 +460,19 @@ function handleProcessChange(processCode) {
 
     const process = sampleData.processes.find(p => (p.codigo || p.code) === processCode);
 
-    if (process && process.subprocesses && process.subprocesses.length > 0) {
+    // Normalize subprocesses: handle both field names and JSON string format
+    if (process) {
+        let subs = process.subprocesses || process.subprocesos || [];
+        if (typeof subs === 'string') {
+            try { subs = JSON.parse(subs); } catch (e) { subs = []; }
+        }
+        process._subs = Array.isArray(subs) ? subs : [];
+    }
+
+    if (process && process._subs && process._subs.length > 0) {
         // Show subprocess section
         subSelector.innerHTML = '<option value="">Seleccionar subproceso...</option>' +
-            process.subprocesses.map(s => `<option value="${s}">${s}</option>`).join('');
+            process._subs.map(s => `<option value="${s}">${s}</option>`).join('');
         subGroup.style.display = 'block';
 
         // Lock total quantity (calculated from subprocesses)
@@ -529,6 +545,7 @@ function removeSubprocessRow(id) {
 function updateTotalQuantity() {
     const total = activeSubprocesses.reduce((acc, curr) => acc + curr.qty, 0);
     document.getElementById('cantidad').value = total;
+    calculatePerformance(); // Actualizar semaforo
 }
 
 async function handleRegistroSubmit() {
@@ -546,10 +563,7 @@ async function handleRegistroSubmit() {
         return;
     }
 
-    if (!proyectoId && !isFullAbsence) {
-        showToast('⚠️ Seleccione un Proyecto', 'warning');
-        return;
-    }
+
 
     const noveltyTypeElement = document.getElementById('noveltyType');
     const noveltyType = noveltyTypeElement ? noveltyTypeElement.value : null;
@@ -645,6 +659,7 @@ async function handleRegistroSubmit() {
         if (result) {
             showToast('✅ Registro guardado exitosamente', 'success');
             clearRegistroForm();
+            renderTodayRegistrations();
             if (typeof renderAlerts === 'function') renderAlerts();
         }
     } else {
@@ -728,6 +743,103 @@ function calculateDuration() {
     const timeFormatted = `${hours}h ${mins}m`;
     if (calculatedSpan) calculatedSpan.textContent = timeFormatted;
     if (hiddenInput) hiddenInput.value = `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
-    if (display) display.style.display = 'block';
+    if (display) display.style.display = 'flex';
+    
+    calculatePerformance(); // Calcular rendimiento cuando cambia tiempo
+}
+
+function calculatePerformance() {
+    const processCode = document.getElementById('codigo')?.value;
+    const cantidadInput = document.getElementById('cantidad')?.value;
+    const hiddenTime = document.getElementById('tiempoCalculado')?.value;
+    const display = document.getElementById('durationDisplay');
+
+    // Remove any existing badge
+    const existingBadge = document.getElementById('perfBadge');
+    if (existingBadge) existingBadge.remove();
+
+    if (!processCode || !cantidadInput || !hiddenTime || hiddenTime === '00:00' || !display) return;
+
+    const process = sampleData.processes.find(p => (p.codigo || p.code) === processCode);
+    if (!process) return;
+
+    const [h, m] = hiddenTime.split(':').map(Number);
+    const totalMinutes = (h * 60) + m;
+
+    if (totalMinutes <= 0) return;
+
+    // Fórmula: Cantidad / ((Meta / 540) * TotalMinutos)
+    const metaDiaria = process.meta_diaria || process.cantidad || 0;
+    if (metaDiaria <= 0) return; // Si no hay meta, no calculamos
+
+    const produccionEsperada = (metaDiaria / 540) * totalMinutes;
+
+    if (produccionEsperada > 0) {
+        const rendimiento = (parseInt(cantidadInput) / produccionEsperada) * 100;
+        let color = '#ef4444'; // red
+        let label = 'Bajo';
+        let emoji = '🔴';
+        
+        if (rendimiento >= 95) {
+            color = '#10b981'; // green
+            label = 'Óptimo';
+            emoji = '🟢';
+        } else if (rendimiento >= 80) {
+            color = '#f59e0b'; // yellow
+            label = 'Riesgo';
+            emoji = '🟡';
+        }
+
+        const badgeHtml = `<div id="perfBadge" style="display: inline-flex; align-items: center; gap: 0.25rem; font-size: 0.75rem; padding: 2px 8px; border-radius: 12px; border: 1px solid ${color}; background: ${color}10; color: ${color}; font-weight: 600; width: fit-content; margin-top: 0.25rem;">
+            ${emoji} Rendimiento: ${rendimiento.toFixed(1)}% (${label})
+        </div>`;
+        
+        display.insertAdjacentHTML('beforeend', badgeHtml);
+    }
+}
+
+function renderTodayRegistrations() {
+    const todayBody = document.getElementById('todayRegistrationsBody');
+    if (!todayBody) return;
+
+    const user = getCurrentUser();
+    const todayStr = new Date().toISOString().split('T')[0];
+    
+    const regs = sampleData.registrations.filter(r => 
+        (r.userId == user.id || r.user_id == user.id) && r.fecha === todayStr
+    );
+
+    if (regs.length === 0) {
+        todayBody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted); padding: 2rem;">Aún no has registrado actividades hoy</td></tr>`;
+        return;
+    }
+
+    todayBody.innerHTML = regs.map(r => {
+        const isNovelty = r.type === 'novedad_total' || r.type === 'novelty';
+        // Check if there is a process matched
+        let procName = isNovelty ? (r.novelty?.type || 'Novedad') : (r.codigo || '-');
+        
+        let detailStr = '';
+        if (isNovelty) {
+            detailStr = r.observaciones || 'Día completo';
+        } else {
+            if (r.subprocesos_detalle && r.subprocesos_detalle.length > 0) {
+                detailStr = r.subprocesos_detalle.map(st => `${st.name}: ${st.cantidad}`).join(', ');
+            } else {
+                detailStr = r.subproceso && r.subproceso !== '-' ? r.subproceso : 'Sin subproceso';
+            }
+        }
+        
+        return `
+            <tr style="font-size: 0.85rem; ${isNovelty ? 'background-color: #f0fdf4;' : ''}">
+                <td>
+                    <div style="font-weight: 600; color: var(--text-primary);">${procName}</div>
+                    <div style="color: var(--text-muted); font-size: 0.75rem; max-width: 140px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${detailStr}">${detailStr}</div>
+                </td>
+                <td style="font-weight: 500;">${isNovelty ? 'N/A' : (r.cantidad || 0)}</td>
+                <td style="color: var(--text-secondary);"><span class="badge ${isNovelty ? 'badge-primary' : 'badge-secondary'}" style="font-size: 0.7rem;">${r.tiempo || '0:00'}</span></td>
+            </tr>
+        `;
+    }).join('');
 }
 
