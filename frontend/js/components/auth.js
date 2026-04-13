@@ -1,6 +1,7 @@
-const API_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-    ? 'http://127.0.0.1:8001/api'
-    : `http://${window.location.hostname}:8001/api`;
+const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+const API_URL = isLocal 
+    ? 'http://127.0.0.1:8001/api' 
+    : 'https://api_estadisticas.gadier.cloud/api';
 
 // Mock current user (will be replaced with real backend authentication)
 let currentUser = {
