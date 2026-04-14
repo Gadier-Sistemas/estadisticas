@@ -65,8 +65,16 @@ class UserController extends Controller
         return response()->json($usuario);
     }
 
-    public function destroy(User $usuario): JsonResponse
+    public function destroy(Request $request, User $usuario): JsonResponse
     {
+        if ($usuario->rol === 'superadmin') {
+            return response()->json(['message' => 'No se puede eliminar una cuenta de administrador'], 403);
+        }
+
+        if ($request->user()->id === $usuario->id) {
+            return response()->json(['message' => 'No puedes eliminar tu propia cuenta'], 403);
+        }
+
         $usuario->delete();
         return response()->json(['message' => 'Usuario eliminado correctamente']);
     }
