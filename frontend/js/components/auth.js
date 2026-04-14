@@ -126,8 +126,11 @@ async function syncUsers() {
         });
 
         if (response.ok) {
-            window.usuariosData = await response.json();
-            console.log('✅ Usuarios sincronizados:', window.usuariosData.length);
+            const data = await response.json();
+            window.usuariosData = data.map(u => ({
+                ...u,
+                apellido: u.lastname || u.apellido || ''
+            }));
         }
     } catch (error) {
         console.error('❌ Error sincronizando usuarios:', error);
