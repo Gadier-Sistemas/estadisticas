@@ -3,6 +3,13 @@ const API_URL = isLocal
     ? 'http://127.0.0.1:8001/api' 
     : 'https://api-estadisticas.gadier.cloud/api';
 
+// En producción, silenciar logs informativos para no exponer datos internos.
+// Solo se mantienen console.error y console.warn para errores reales.
+if (!isLocal) {
+    console.log = function() {};
+    console.info = function() {};
+}
+
 // Mock current user (will be replaced with real backend authentication)
 let currentUser = {
     id: 1,
