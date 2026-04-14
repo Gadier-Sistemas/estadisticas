@@ -299,6 +299,28 @@ async function confirmSwitchUser(userId) {
 }
 
 
+function renderUserCardFooter(user) {
+    const me = getCurrentUser();
+    const isOwnAccount = me && parseInt(me.id) === parseInt(user.id);
+    const isOtherAdmin = user.rol === 'superadmin' && !isOwnAccount;
+
+    if (isOtherAdmin) {
+        return `<div style="padding-top: 1rem; border-top: 1px dotted #e2e8f0; display: flex; justify-content: flex-end; position: relative; z-index: 2;">
+            <span style="font-size: 0.75rem; color: #94a3b8;">🔐 Cuenta protegida</span>
+        </div>`;
+    }
+
+    return `<div class="usuario-card-footer" style="padding-top: 1rem; border-top: 1px dotted #e2e8f0; display: flex; justify-content: flex-end; gap: 0.5rem; position: relative; z-index: 2;">
+        <button class="btn-icon-small" onclick="editarUsuario(${user.id})" title="Editar">✏️</button>
+        ${!isOwnAccount ? `
+            <button class="btn-icon-small" onclick="toggleUsuarioStatus(${user.id})" title="${user.activo ? 'Desactivar' : 'Activar'}">
+                ${user.activo ? '🔒' : '🔓'}
+            </button>
+            <button class="btn-icon-small btn-danger" onclick="eliminarUsuario(${user.id})" title="Eliminar">🗑️</button>
+        ` : ''}
+    </div>`;
+}
+
 function renderUsuariosGrid() {
     // Get users directly from auth.js storage
     const users = getUsers();
@@ -337,19 +359,7 @@ function renderUsuariosGrid() {
                 </div>
             </div>
             
-            <div class="usuario-card-footer" style="padding-top: 1rem; border-top: 1px dotted #e2e8f0; display: flex; justify-content: flex-end; gap: 0.5rem; position: relative; z-index: 2;">
-                <button class="btn-icon-small" onclick="editarUsuario(${user.id})" title="Editar">
-                    ✏️
-                </button>
-                <button class="btn-icon-small" onclick="toggleUsuarioStatus(${user.id})" title="${user.activo ? 'Desactivar' : 'Activar'}">
-                    ${user.activo ? '🔒' : '🔓'}
-                </button>
-                ${user.rol !== 'superadmin' ? `
-                <button class="btn-icon-small btn-danger" onclick="eliminarUsuario(${user.id})" title="Eliminar">
-                    🗑️
-                </button>
-                ` : ''}
-            </div>
+            ${renderUserCardFooter(user)}
         </div>
     `).join('');
 }
@@ -430,17 +440,7 @@ function initUsuariosHandlers() {
                         </div>
                     </div>
                     
-                    <div class="usuario-card-footer" style="padding-top: 1rem; border-top: 1px dotted #e2e8f0; display: flex; justify-content: flex-end; gap: 0.5rem; position: relative; z-index: 2;">
-                        <button class="btn-icon-small" onclick="editarUsuario(${user.id})" title="Editar">✏️</button>
-                        <button class="btn-icon-small" onclick="toggleUsuarioStatus(${user.id})" title="${user.activo ? 'Desactivar' : 'Activar'}">
-                            ${user.activo ? '🔒' : '🔓'}
-                        </button>
-                        ${user.rol !== 'superadmin' ? `
-                        <button class="btn-icon-small btn-danger" onclick="eliminarUsuario(${user.id})" title="Eliminar">
-                            🗑️
-                        </button>
-                        ` : ''}
-                    </div>
+                    ${renderUserCardFooter(user)}
                 </div>
             `).join('');
         }

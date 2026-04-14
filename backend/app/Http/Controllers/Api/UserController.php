@@ -44,6 +44,10 @@ class UserController extends Controller
 
     public function update(UserUpdateRequest $request, User $usuario): JsonResponse
     {
+        if ($usuario->rol === 'superadmin' && $request->user()->id !== $usuario->id) {
+            return response()->json(['message' => 'No puedes modificar la cuenta de otro administrador'], 403);
+        }
+
         $validated = $request->validated();
 
         if (array_key_exists('name', $validated)) $usuario->name = $validated['name'];
