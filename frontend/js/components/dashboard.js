@@ -515,6 +515,8 @@ async function initDashboardCharts() {
     // Weekly Production Chart
     const weeklyCtx = document.getElementById('dashboardWeeklyChart');
     if (weeklyCtx) {
+        const existingWeekly = Chart.getChart(weeklyCtx);
+        if (existingWeekly) existingWeekly.destroy();
         dashboardChartInstances.weekly = new Chart(weeklyCtx, {
             type: 'bar',
             data: {
@@ -541,6 +543,8 @@ async function initDashboardCharts() {
     // Top Proyectos Chart
     const processesCtx = document.getElementById('dashboardProcessesChart');
     if (processesCtx) {
+        const existingProcesses = Chart.getChart(processesCtx);
+        if (existingProcesses) existingProcesses.destroy();
         dashboardChartInstances.processes = new Chart(processesCtx, {
             type: 'doughnut',
             data: {
