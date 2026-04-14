@@ -1,5 +1,17 @@
-// Dashboard Module
+// Dashboard Module - Chart instance tracking
+let dashboardChartInstances = {};
+
+function destroyDashboardCharts() {
+    Object.values(dashboardChartInstances).forEach(chart => {
+        if (chart && typeof chart.destroy === 'function') {
+            chart.destroy();
+        }
+    });
+    dashboardChartInstances = {};
+}
+
 function loadDashboardModule() {
+    destroyDashboardCharts();
     const dashboardModule = document.getElementById('module-dashboard');
 
     // Check if current user is an operator
@@ -503,7 +515,7 @@ async function initDashboardCharts() {
     // Weekly Production Chart
     const weeklyCtx = document.getElementById('dashboardWeeklyChart');
     if (weeklyCtx) {
-        new Chart(weeklyCtx, {
+        dashboardChartInstances.weekly = new Chart(weeklyCtx, {
             type: 'bar',
             data: {
                 labels: weeklyLabels,
@@ -529,7 +541,7 @@ async function initDashboardCharts() {
     // Top Proyectos Chart
     const processesCtx = document.getElementById('dashboardProcessesChart');
     if (processesCtx) {
-        new Chart(processesCtx, {
+        dashboardChartInstances.processes = new Chart(processesCtx, {
             type: 'doughnut',
             data: {
                 labels: proyectoLabels.length ? proyectoLabels : ['Sin datos'],
