@@ -27,3 +27,5 @@
 Thumbs.db
 *.log
 /temp_recovery/
+.claude/
+.gemini/
