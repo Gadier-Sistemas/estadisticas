@@ -371,13 +371,21 @@ function loadAdminDashboard() {
         </div>
     `;
 
-    // Initialize charts
-    setTimeout(() => {
-        initDashboardCharts();
+    // Una sola petición para charts y rendimiento
+    setTimeout(async () => {
+        const token = sessionStorage.getItem('authToken');
+        let stats = null;
+        try {
+            const response = await fetch(`${API_URL}/dashboard/stats`, {
+                headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' }
+            });
+            if (response.ok) stats = await response.json();
+        } catch (e) {
+            console.error('Error cargando stats del dashboard:', e);
+        }
+        initDashboardCharts(stats);
+        updateRendimientoCard(stats);
     }, 100);
-
-    // Cargar rendimiento global desde API
-    loadRendimientoCard();
 }
 
 /**
@@ -385,41 +393,25 @@ function loadAdminDashboard() {
  * @async
  * @returns {Promise<void>}
  */
-async function loadRendimientoCard() {
+function updateRendimientoCard(stats) {
     const card = document.getElementById('rendimientoCard');
     if (!card) return;
 
-    try {
-        const token = sessionStorage.getItem('authToken');
-        const response = await fetch(`${API_URL}/dashboard/stats`, {
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Accept': 'application/json'
-            }
-        });
+    const rend = (stats && stats.rendimiento_hoy) ? stats.rendimiento_hoy : { porcentaje: 0, semaforo: 'gris', total_registros: 0 };
+    const colors = { verde: '#10b981', amarillo: '#f59e0b', rojo: '#ef4444', gris: '#6b7280' };
+    const icons  = { verde: '🟢', amarillo: '🟡', rojo: '🔴', gris: '⏳' };
+    const color  = colors[rend.semaforo] || colors.gris;
+    const icon   = icons[rend.semaforo]  || icons.gris;
 
-        if (!response.ok) return;
-
-        const stats = await response.json();
-        const rend = stats.rendimiento_hoy || { porcentaje: 0, semaforo: 'gris' };
-
-        const colors = { verde: '#10b981', amarillo: '#f59e0b', rojo: '#ef4444', gris: '#6b7280' };
-        const icons = { verde: '🟢', amarillo: '🟡', rojo: '🔴', gris: '⏳' };
-        const color = colors[rend.semaforo] || colors.gris;
-        const icon = icons[rend.semaforo] || icons.gris;
-
-        card.style.borderLeft = `4px solid ${color}`;
-        card.innerHTML = `
-            <div class="stat-icon">${icon}</div>
-            <div class="stat-content">
-                <h3>Rendimiento Hoy</h3>
-                <div class="stat-value" style="color: ${color};">${rend.porcentaje}%</div>
-                <p class="stat-label">${rend.total_registros} registros analizados</p>
-            </div>
-        `;
-    } catch (error) {
-        console.error('Error cargando rendimiento:', error);
-    }
+    card.style.borderLeft = `4px solid ${color}`;
+    card.innerHTML = `
+        <div class="stat-icon">${icon}</div>
+        <div class="stat-content">
+            <h3>Rendimiento Hoy</h3>
+            <div class="stat-value" style="color: ${color};">${rend.porcentaje}%</div>
+            <p class="stat-label">${rend.total_registros} registros analizados</p>
+        </div>
+    `;
 }
 
 /**
@@ -472,7 +464,7 @@ function getTotalHours() {
     }, 0).toFixed(0);
 }
 
-async function initDashboardCharts() {
+function initDashboardCharts(stats) {
     const dayNames = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
     const chartColors = [
         'rgba(153, 15, 12, 0.9)',
@@ -487,29 +479,19 @@ async function initDashboardCharts() {
     let proyectoLabels = [];
     let proyectoData = [];
 
-    try {
-        const token = sessionStorage.getItem('authToken');
-        const response = await fetch(`${API_URL}/dashboard/stats`, {
-            headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' }
-        });
-        if (response.ok) {
-            const stats = await response.json();
-
-            if (stats.produccion_semanal && stats.produccion_semanal.length) {
-                weeklyLabels = stats.produccion_semanal.map(item => {
-                    const d = new Date(item.date + 'T00:00:00');
-                    return dayNames[d.getDay()];
-                });
-                weeklyData = stats.produccion_semanal.map(item => item.total);
-            }
-
-            if (stats.produccion_por_proyecto && stats.produccion_por_proyecto.length) {
-                proyectoLabels = stats.produccion_por_proyecto.map(p => p.nombre);
-                proyectoData = stats.produccion_por_proyecto.map(p => p.total);
-            }
+    if (stats) {
+        if (stats.produccion_semanal && stats.produccion_semanal.length) {
+            weeklyLabels = stats.produccion_semanal.map(item => {
+                const d = new Date(item.date + 'T00:00:00');
+                return dayNames[d.getDay()];
+            });
+            weeklyData = stats.produccion_semanal.map(item => item.total);
         }
-    } catch (e) {
-        console.error('Error cargando datos para charts:', e);
+
+        if (stats.produccion_por_proyecto && stats.produccion_por_proyecto.length) {
+            proyectoLabels = stats.produccion_por_proyecto.map(p => p.nombre);
+            proyectoData = stats.produccion_por_proyecto.map(p => p.total);
+        }
     }
 
     // Weekly Production Chart
