@@ -21,6 +21,9 @@
 # Frontend
 /frontend/node_modules/
 /frontend/.vscode/
+*.xlsx
+*.xlsm
+*.xls
 
 # System Files
 .DS_Store

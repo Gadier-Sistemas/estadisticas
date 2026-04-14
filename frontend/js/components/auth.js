@@ -1,7 +1,7 @@
 const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-const API_URL = isLocal 
-    ? 'http://127.0.0.1:8001/api' 
-    : 'https://api-estadisticas.gadier.cloud/api';
+const API_URL = isLocal
+    ? 'http://127.0.0.1:8001/api'
+    : `${window.location.origin}/api`;
 
 // En producción, silenciar logs informativos para no exponer datos internos.
 // Solo se mantienen console.error y console.warn para errores reales.
