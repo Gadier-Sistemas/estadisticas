@@ -8,6 +8,7 @@ const API_URL = isLocal
 if (!isLocal) {
     console.log = function() {};
     console.info = function() {};
+    console.warn = function() {};
 }
 
 // Mock current user (will be replaced with real backend authentication)
@@ -215,37 +216,6 @@ async function logout() {
 }
 
 /**
- * Switch user (for testing purposes)
- */
-function switchToOperario() {
-    const operario = {
-        id: 1,
-        name: 'Operario',
-        apellido: 'GADIER',
-        email: 'operario@gadier.com',
-        rol: 'operario',
-        codigo: 'OP001',
-        activo: true
-    };
-    setCurrentUser(operario);
-    showToast('👤 Cambiado a rol: Operario', 'info');
-}
-
-function switchToSuperadmin() {
-    const admin = {
-        id: 2,
-        name: 'Admin',
-        apellido: 'Sistema',
-        email: 'admin@gadier.com',
-        rol: 'superadmin',
-        codigo: 'ADM001',
-        activo: true
-    };
-    setCurrentUser(admin);
-    showToast('👨‍💼 Cambiado a rol: Superadmin', 'info');
-}
-
-/**
  * Initialize authentication module
  */
 function initAuth() {
@@ -256,8 +226,6 @@ function initAuth() {
         // Start inactivity timer if logged in
         initInactivityTimer();
     }
-    console.log('Usuario actual:', user);
-
     // Expose functions globally
     window.getUsers = getUsers;
     window.getCurrentUser = getCurrentUser;
@@ -266,14 +234,6 @@ function initAuth() {
     window.logout = logout;
     window.login = login;
     window.syncUsers = syncUsers;
-
-    // Expose reset function for testing/recovery
-    window.resetUsers = function () {
-        localStorage.removeItem('app_users');
-        getUsers(); // Reloads defaults
-        showToast('🔄 Datos de usuario restablecidos', 'success');
-        setTimeout(() => location.reload(), 1000);
-    };
 
     // Update UI based on role
     updateUIForRole();

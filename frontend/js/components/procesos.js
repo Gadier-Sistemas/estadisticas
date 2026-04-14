@@ -71,7 +71,7 @@ function loadProcesosModule() {
                 <div class="stat-icon">📊</div>
                 <div class="stat-content">
                     <h3>Unidades</h3>
-                    <p class="stat-value">${new Set(sampleData.processes.map(p => p.unidad_medida || p.unit)).size}</p>
+                    <p class="stat-value">${new Set(sampleData.processes.map(p => p.unidad)).size}</p>
                     <span class="stat-label">Tipos diferentes</span>
                 </div>
             </div>
@@ -116,9 +116,9 @@ function renderProcessesTableRows(filter = 'all', searchTerm = '') {
                     ${(proc.subprocesos || proc.subprocesses) ? (Array.isArray(proc.subprocesos || proc.subprocesses) ? (proc.subprocesos || proc.subprocesses).join(' • ') : (proc.subprocesos || proc.subprocesses)) : 'Sin subprocesos'}
                 </div>
             </td>
-            <td class="text-muted">${proc.unidad_medida || proc.unit || '-'}</td>
+            <td class="text-muted">${proc.unidad || '-'}</td>
             <td>
-                <strong style="color: var(--primary); font-weight: 600;">${proc.cantidad_meta || proc.cantidad || 0}</strong> <span class="text-xs text-muted">/ día</span>
+                <strong style="color: var(--primary); font-weight: 600;">${proc.meta_diaria || 0}</strong> <span class="text-xs text-muted">/ día</span>
             </td>
             <td>
                 <div style="display: flex; gap: 0.5rem;">
@@ -168,40 +168,27 @@ function viewProcessDetail(code) {
     modal.className = 'modal-overlay';
     modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 2000; backdrop-filter: blur(4px);';
 
-    let subprocesos = process.subprocesses || process.subprocesos || [];
-    if (typeof subprocesos === 'string') subprocesos = JSON.parse(subprocesos);
-
     modal.innerHTML = `
         <div class="modal-content" style="background: white; padding: 2rem; border-radius: 12px; width: 90%; max-width: 500px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);">
             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; border-bottom: 1px solid #eee; padding-bottom: 1rem;">
                 <div>
-                    <h3 style="margin: 0; color: var(--text-color);">${process.codigo || process.code} - ${process.nombre || process.name}</h3>
-                    <p style="margin: 0; margin-top: 5px; color: var(--text-muted); font-size: 0.85em;">Categoría: ${process.category || process.categoria}</p>
+                    <h3 style="margin: 0; color: var(--text-color);">${process.codigo} - ${process.nombre}</h3>
+                    <p style="margin: 0; margin-top: 5px; color: var(--text-muted); font-size: 0.85em;">Categoría: ${process.categoria}</p>
                 </div>
                 <button class="btn-icon" onclick="document.getElementById('${modalId}').remove()" style="font-size: 1.5rem;">×</button>
             </div>
-            
+
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
                 <div style="background: #f8fafc; padding: 1rem; border-radius: 8px;">
                     <div style="font-size: 0.75rem; color: #64748b; font-weight: 600; text-transform: uppercase;">Unidad de Medida</div>
-                    <div style="font-size: 1.125rem; font-weight: 600; color: #0f172a; margin-top: 0.25rem;">${process.unidad_medida || process.unit || 'N/A'}</div>
+                    <div style="font-size: 1.125rem; font-weight: 600; color: #0f172a; margin-top: 0.25rem;">${process.unidad || 'N/A'}</div>
                 </div>
                 <div style="background: #f8fafc; padding: 1rem; border-radius: 8px;">
                     <div style="font-size: 0.75rem; color: #64748b; font-weight: 600; text-transform: uppercase;">Meta Diaria</div>
-                    <div style="font-size: 1.125rem; font-weight: 600; color: var(--primary-color); margin-top: 0.25rem;">${process.cantidad_meta || process.cantidad || 0}</div>
+                    <div style="font-size: 1.125rem; font-weight: 600; color: var(--primary-color); margin-top: 0.25rem;">${process.meta_diaria || 0}</div>
                 </div>
             </div>
 
-            <div style="margin-bottom: 1.5rem;">
-                <h4 style="margin: 0 0 0.5rem 0; font-size: 0.9em; color: var(--text-color);">Subprocesos Asignados</h4>
-                ${subprocesos && subprocesos.length > 0 ? 
-                    `<ul style="margin: 0; padding-left: 1.5rem; color: var(--text-muted); font-size: 0.9em;">
-                        ${subprocesos.map(s => `<li>${s}</li>`).join('')}
-                    </ul>` : 
-                    `<p style="margin: 0; color: var(--text-muted); font-size: 0.9em; font-style: italic;">No tiene subprocesos definidos</p>`
-                }
-            </div>
-            
             <div style="display: flex; justify-content: flex-end;">
                 <button class="btn btn-secondary" onclick="document.getElementById('${modalId}').remove()">Cerrar</button>
             </div>
@@ -226,29 +213,22 @@ function showProcessModal(code = null) {
     modal.className = 'modal-overlay';
     modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 2000; backdrop-filter: blur(4px);';
 
-    let subprocesosStr = '';
-    if (process) {
-        let subs = process.subprocesses || process.subprocesos || [];
-        if (typeof subs === 'string') subs = JSON.parse(subs);
-        subprocesosStr = Array.isArray(subs) ? subs.join('\\n') : '';
-    }
-
     modal.innerHTML = `
         <div class="modal-content" style="background: white; padding: 2rem; border-radius: 12px; width: 90%; max-width: 500px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);">
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 1rem; margin-bottom: 1.5rem;">
                 <h3 style="margin: 0;">${process ? '✏️ Editar Proceso' : '➕ Nuevo Proceso'}</h3>
                 <button class="btn-icon" onclick="document.getElementById('${modalId}').remove()" style="font-size: 1.5rem;">×</button>
             </div>
-            
-            <form id="processForm" onsubmit="saveProcess(event, ${process ? process.id : 'null'})">
+
+            <form id="processForm" onsubmit="saveProcess(event, '${process ? process.codigo : ''}')">
                 <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 1rem; margin-bottom: 1rem;">
                     <div>
                         <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Código</label>
-                        <input type="text" id="procCode" required value="${process ? (process.codigo || process.code) : ''}" style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 6px;" ${process ? 'readonly' : ''}>
+                        <input type="text" id="procCode" required value="${process ? process.codigo : ''}" style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 6px;" ${process ? 'readonly' : ''}>
                     </div>
                     <div>
                         <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Nombre</label>
-                        <input type="text" id="procName" required value="${process ? (process.nombre || process.name) : ''}" style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 6px;">
+                        <input type="text" id="procName" required value="${process ? process.nombre : ''}" style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 6px;">
                     </div>
                 </div>
 
@@ -256,26 +236,19 @@ function showProcessModal(code = null) {
                     <div>
                         <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Categoría</label>
                         <select id="procCat" required style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 6px;">
-                            <option value="OPERATIVO" ${process && (process.categoria === 'OPERATIVO' || process.category === 'OPERATIVO') ? 'selected' : ''}>OPERATIVO</option>
-                            <option value="CUSTODIA" ${process && (process.categoria === 'CUSTODIA' || process.category === 'CUSTODIA') ? 'selected' : ''}>CUSTODIA</option>
+                            <option value="OPERATIVO" ${process && process.categoria === 'OPERATIVO' ? 'selected' : ''}>OPERATIVO</option>
+                            <option value="CUSTODIA" ${process && process.categoria === 'CUSTODIA' ? 'selected' : ''}>CUSTODIA</option>
                         </select>
                     </div>
                     <div>
                         <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Unidad M.</label>
-                        <input type="text" id="procUnit" required value="${process ? (process.unidad_medida || process.unit) : ''}" style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 6px;">
+                        <input type="text" id="procUnit" required value="${process ? (process.unidad || '') : ''}" style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 6px;">
                     </div>
                 </div>
 
-                <div style="margin-bottom: 1rem;">
-                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Cantidad Meta Diaria</label>
-                    <input type="number" id="procMeta" required min="1" value="${process ? (process.cantidad_meta || process.cantidad) : ''}" style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 6px;">
-                </div>
-
                 <div style="margin-bottom: 1.5rem;">
-                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">
-                        Subprocesos <span style="font-weight: normal; font-size: 0.8em; color: #888;">(Uno por línea)</span>
-                    </label>
-                    <textarea id="procSubs" rows="3" style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 6px;">${subprocesosStr}</textarea>
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Meta Diaria</label>
+                    <input type="number" id="procMeta" required min="1" value="${process ? (process.meta_diaria || '') : ''}" style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 6px;">
                 </div>
 
                 <div style="display: flex; justify-content: flex-end; gap: 1rem; border-top: 1px solid #eee; padding-top: 1.5rem;">
@@ -304,9 +277,8 @@ async function saveProcess(e, processId) {
         codigo: document.getElementById('procCode').value,
         nombre: document.getElementById('procName').value,
         categoria: document.getElementById('procCat').value,
-        unidad_medida: document.getElementById('procUnit').value,
-        cantidad_meta: document.getElementById('procMeta').value,
-        subprocesos: document.getElementById('procSubs').value.split('\\n').map(s => s.trim()).filter(s => s !== '')
+        unidad: document.getElementById('procUnit').value,
+        meta_diaria: parseInt(document.getElementById('procMeta').value, 10),
     };
 
     try {

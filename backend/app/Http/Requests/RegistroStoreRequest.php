@@ -26,7 +26,7 @@ class RegistroStoreRequest extends FormRequest
             'proceso_codigo' => 'required|string|exists:procesos,codigo',
             'fecha' => 'required|date',
             'cantidad' => 'required|integer|min:1',
-            'tiempo' => 'required|string|regex:/^\d{2}:\d{2}$/', // Formato HH:MM
+            'tiempo' => 'required|string|regex:/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/',
             'cliente' => 'nullable|string|max:255',
             'observaciones' => 'nullable|string',
             'tipo' => 'nullable|string',

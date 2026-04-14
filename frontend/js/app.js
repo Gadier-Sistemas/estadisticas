@@ -144,7 +144,7 @@ async function saveRegistration(regData) {
             await syncRegistrations();
             return newReg;
         } else {
-            const error = await response.json();
+            const error = await response.json().catch(() => ({ message: 'Error del servidor' }));
             console.error('❌ Error al guardar registro:', error);
             showToast('❌ Error: ' + (error.message || 'No se pudo guardar'), 'error');
             return null;
@@ -171,7 +171,7 @@ function updateSampleDataStats() {
             // Formula: Cantidad / ((Meta / 540) * TotalMinutos)
             const parts = reg.tiempo.split(':');
             const totalMinutos = (parseInt(parts[0]) * 60) + parseInt(parts[1]);
-            const metaDiaria = process.cantidad || 0;
+            const metaDiaria = process.meta_diaria || 0;
             const produccionEsperada = (metaDiaria / 540) * totalMinutos;
 
             if (produccionEsperada > 0) {

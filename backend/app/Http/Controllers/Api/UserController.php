@@ -67,10 +67,6 @@ class UserController extends Controller
 
     public function destroy(User $usuario): JsonResponse
     {
-        if (request()->user() && request()->user()->rol !== 'superadmin') {
-            return response()->json(['message' => 'No autorizado'], 403);
-        }
-
         $usuario->delete();
         return response()->json(['message' => 'Usuario eliminado correctamente']);
     }

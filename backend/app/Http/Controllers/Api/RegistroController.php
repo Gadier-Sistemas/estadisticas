@@ -45,6 +45,12 @@ class RegistroController extends Controller
 
     public function update(RegistroUpdateRequest $request, Registro $registro)
     {
+        $user = $request->user();
+
+        if ($user->rol !== 'superadmin' && $user->id !== $registro->user_id) {
+            return response()->json(['message' => 'No autorizado'], 403);
+        }
+
         $registro->update($request->validated());
         return response()->json($registro->load('proceso', 'proyecto'));
     }

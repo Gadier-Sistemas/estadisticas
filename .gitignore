@@ -32,3 +32,8 @@ Thumbs.db
 /temp_recovery/
 .claude/
 .gemini/
+
+# Herramientas locales de desarrollo (no van al repo)
+.agents/
+tests/
+skills-lock.json
