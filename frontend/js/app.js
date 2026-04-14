@@ -46,13 +46,6 @@ async function syncRegistrations() {
             }));
 
             updateSampleDataStats();
-            console.log('✅ Registros sincronizados y mapeados:', sampleData.registrations.length);
-
-            // Re-render current module if it depends on registrations
-            const activeModule = document.querySelector('.module.active');
-            if (activeModule && activeModule.id === 'module-dashboard') {
-                if (typeof loadDashboardModule === 'function') loadDashboardModule();
-            }
         }
     } catch (error) {
         console.error('❌ Error sincronizando registros:', error);
@@ -258,12 +251,20 @@ function initNavigation() {
             if (targetModule) {
                 targetModule.classList.add('active');
 
-                // Re-render dashboard if selected to show fresh data
+                // Cargar módulo bajo demanda
                 if (moduleName === 'dashboard') {
                     if (typeof loadDashboardModule === 'function') loadDashboardModule();
-                }
-
-                if (moduleName === 'seguimiento') {
+                } else if (moduleName === 'registro') {
+                    if (typeof loadRegistroModule === 'function') loadRegistroModule();
+                } else if (moduleName === 'procesos') {
+                    if (typeof loadProcesosModule === 'function') loadProcesosModule();
+                } else if (moduleName === 'usuarios') {
+                    if (typeof loadUsuariosModule === 'function') loadUsuariosModule();
+                } else if (moduleName === 'reportes') {
+                    if (typeof loadReportesModule === 'function') loadReportesModule();
+                } else if (moduleName === 'consolidado') {
+                    if (typeof loadConsolidadoModule === 'function') loadConsolidadoModule();
+                } else if (moduleName === 'seguimiento') {
                     if (typeof loadSeguimientoModule === 'function') loadSeguimientoModule();
                 }
 
@@ -357,14 +358,12 @@ function showToast(message, type = 'info') {
     }, 3000);
 }
 
-// Load Module Content (implemented in respective module files)
+// Load Module Content - solo carga el módulo visible inicialmente (dashboard)
+// Los demás módulos se cargan bajo demanda al hacer clic en el menú.
 function loadModules() {
     loadDashboardModule();
-    loadRegistroModule();
-    loadProcesosModule();
-    loadUsuariosModule();
-    loadReportesModule();
-    loadConsolidadoModule();
+    // Los módulos se inicializan cuando el usuario navega a ellos
+    // para evitar peticiones innecesarias al servidor.
 }
 
 // Utility Functions
