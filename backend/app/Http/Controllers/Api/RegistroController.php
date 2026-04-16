@@ -12,6 +12,11 @@ class RegistroController extends Controller
 {
     public function index(Request $request)
     {
+        $request->validate([
+            'fecha_inicio' => 'nullable|date_format:Y-m-d',
+            'fecha_fin'    => 'nullable|date_format:Y-m-d|after_or_equal:fecha_inicio',
+        ]);
+
         $user = $request->user();
         $query = Registro::with('proceso', 'proyecto');
 
@@ -19,11 +24,11 @@ class RegistroController extends Controller
             $query->where('user_id', $user->id);
         }
 
-        if ($request->has('fecha_inicio')) {
+        if ($request->filled('fecha_inicio')) {
             $query->whereDate('fecha', '>=', $request->fecha_inicio);
         }
 
-        if ($request->has('fecha_fin')) {
+        if ($request->filled('fecha_fin')) {
             $query->whereDate('fecha', '<=', $request->fecha_fin);
         }
 
@@ -55,9 +60,9 @@ class RegistroController extends Controller
         return response()->json($registro->load('proceso', 'proyecto'));
     }
 
-    public function destroy(Registro $registro)
+    public function destroy(Request $request, Registro $registro)
     {
-        if (request()->user()->rol !== 'superadmin') {
+        if ($request->user()->rol !== 'superadmin') {
             return response()->json(['message' => 'No autorizado'], 403);
         }
 

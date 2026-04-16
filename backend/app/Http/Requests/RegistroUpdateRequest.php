@@ -21,7 +21,7 @@ class RegistroUpdateRequest extends FormRequest
             'cantidad' => 'sometimes|integer|min:1',
             'tiempo' => 'sometimes|string|regex:/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/',
             'cliente' => 'nullable|string|max:255',
-            'observaciones' => 'nullable|string',
+            'observaciones' => 'nullable|string|max:1000',
             'tipo' => 'nullable|string',
             'novedad_tipo' => 'nullable|string',
         ];

@@ -24,7 +24,6 @@ const sampleData = {
 async function syncRegistrations() {
     if (!sessionStorage.getItem('isAuthenticated')) return;
 
-    console.log('🔄 Sincronizando registros con la API...');
     try {
         const response = await fetch(`${API_URL}/registros`, {
             headers: {
@@ -70,7 +69,6 @@ async function loadInitialData() {
         });
         if (procResponse.ok) {
             sampleData.processes = await procResponse.json();
-            console.log('✅ Procesos cargados:', sampleData.processes.length);
         }
 
         // Load Projects
@@ -82,7 +80,6 @@ async function loadInitialData() {
         });
         if (projResponse.ok) {
             sampleData.projects = await projResponse.json();
-            console.log('✅ Proyectos cargados:', sampleData.projects.length);
         }
 
         // Initial sync of registrations
@@ -112,8 +109,6 @@ function getRegistrations() {
 async function saveRegistration(regData) {
     if (!sessionStorage.getItem('isAuthenticated')) return;
 
-    console.log('💾 Enviando registro a la API:', regData);
-
     try {
         const response = await fetch(`${API_URL}/registros`, {
             method: 'POST',
@@ -138,7 +133,6 @@ async function saveRegistration(regData) {
 
         if (response.ok) {
             const newReg = await response.json();
-            console.log('✅ Registro guardado en API:', newReg);
 
             // Sincronizar para actualizar la interfaz
             await syncRegistrations();

@@ -22,35 +22,35 @@ class DashboardController extends Controller
     public function getStats(Request $request)
     {
         $today = now()->toDateString();
+        $user = $request->user();
+        $isSuperadmin = $user->rol === 'superadmin';
+
+        $registrosBase = Registro::where('fecha', $today);
+        $semanalBase   = Registro::select(DB::raw('DATE(fecha) as date'), DB::raw('SUM(cantidad) as total'))
+            ->where('fecha', '>=', now()->subDays(7));
+        $proyectoBase  = DB::table('registros')
+            ->join('proyectos', 'registros.proyecto_id', '=', 'proyectos.id')
+            ->select('proyectos.nombre', DB::raw('SUM(registros.cantidad) as total'));
+
+        if (!$isSuperadmin) {
+            $registrosBase->where('user_id', $user->id);
+            $semanalBase->where('user_id', $user->id);
+            $proyectoBase->where('registros.user_id', $user->id);
+        }
 
         $stats = [
-            'total_operarios' => User::where('rol', 'operario')->count(),
-            'operarios_activos' => User::where('rol', 'operario')->where('activo', true)->count(),
-            'registros_hoy' => Registro::where('fecha', $today)->count(),
-            'total_unidades_hoy' => Registro::where('fecha', $today)->sum('cantidad'),
-
-            // Producción semanal (últimos 7 días)
-            'produccion_semanal' => Registro::select(
-            DB::raw('DATE(fecha) as date'),
-            DB::raw('SUM(cantidad) as total')
-        )
-            ->where('fecha', '>=', now()->subDays(7))
-            ->groupBy('date')
-            ->orderBy('date')
-            ->get(),
-
-            // Producción por proyecto (Top 5)
-            'produccion_por_proyecto' => DB::table('registros')
-            ->join('proyectos', 'registros.proyecto_id', '=', 'proyectos.id')
-            ->select('proyectos.nombre', DB::raw('SUM(registros.cantidad) as total'))
-            ->groupBy('proyectos.nombre')
-            ->orderByDesc('total')
-            ->limit(5)
-            ->get(),
-
-            // Rendimiento global del día
-            'rendimiento_hoy' => $this->calcularRendimientoGlobal($today),
+            'registros_hoy'       => $registrosBase->count(),
+            'total_unidades_hoy'  => (clone $registrosBase)->sum('cantidad'),
+            'produccion_semanal'  => $semanalBase->groupBy('date')->orderBy('date')->get(),
+            'produccion_por_proyecto' => $proyectoBase->groupBy('proyectos.nombre')->orderByDesc('total')->limit(5)->get(),
+            'rendimiento_hoy'     => $this->calcularRendimientoGlobal($today, $isSuperadmin ? null : $user->id),
         ];
+
+        // Estadísticas globales solo para superadmin
+        if ($isSuperadmin) {
+            $stats['total_operarios']   = User::where('rol', 'operario')->count();
+            $stats['operarios_activos'] = User::where('rol', 'operario')->where('activo', true)->count();
+        }
 
         return response()->json($stats);
     }
@@ -154,12 +154,17 @@ class DashboardController extends Controller
     /**
      * Calcula el rendimiento global del día (promedio ponderado).
      */
-    private function calcularRendimientoGlobal(string $fecha): array
+    private function calcularRendimientoGlobal(string $fecha, ?int $userId = null): array
     {
-        $registros = Registro::with('proceso')
+        $query = Registro::with('proceso')
             ->where('fecha', $fecha)
-            ->where('tipo', '!=', 'novedad')
-            ->get();
+            ->where('tipo', '!=', 'novedad');
+
+        if ($userId !== null) {
+            $query->where('user_id', $userId);
+        }
+
+        $registros = $query->get();
 
         if ($registros->isEmpty()) {
             return ['porcentaje' => 0, 'semaforo' => 'gris', 'total_registros' => 0];

@@ -28,7 +28,7 @@ class RegistroStoreRequest extends FormRequest
             'cantidad' => 'required|integer|min:1',
             'tiempo' => 'required|string|regex:/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/',
             'cliente' => 'nullable|string|max:255',
-            'observaciones' => 'nullable|string',
+            'observaciones' => 'nullable|string|max:1000',
             'tipo' => 'nullable|string',
             'novedad_tipo' => 'nullable|string',
         ];

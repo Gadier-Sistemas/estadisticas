@@ -34,7 +34,7 @@ class ProyectoController extends Controller
 
     public function destroy(Proyecto $proyecto): JsonResponse
     {
-        if (request()->user() && request()->user()->rol !== 'superadmin') {
+        if (!request()->user() || request()->user()->rol !== 'superadmin') {
             return response()->json(['message' => 'No autorizado'], 403);
         }
 

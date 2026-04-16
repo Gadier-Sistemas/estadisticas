@@ -199,8 +199,6 @@ function getFilteredReportData() {
     const client = document.getElementById('reportCliente').value;
     const proc = document.getElementById('reportProceso').value;
 
-    console.log('🔍 Filtrando Reporte:', { start: startInput, end: endInput, opId, client, proc });
-
     let filtered = (sampleData.statistics || []).filter(stat => {
         const dateMatch = (!startInput || stat.date >= startInput) && (!endInput || stat.date <= endInput);
         const opMatch = opId === 'all' || Number(stat.operatorId) === Number(opId);
@@ -248,7 +246,6 @@ function getFilteredReportData() {
         filtered = [...filtered, ...missingDays].sort((a, b) => b.date.localeCompare(a.date));
     }
 
-    console.log('✅ Filtro aplicado. Resultados found:', filtered.length);
     return filtered;
 }
 

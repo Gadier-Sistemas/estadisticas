@@ -578,15 +578,6 @@ async function handleRegistroSubmit() {
         cliente: document.getElementById('cliente').value
     };
 
-    console.log('🚀 Iniciando GUARDADO de registro:');
-    console.log('👤 Usuario Sesión:', user?.name, '(ID:', user?.id, 'Rol:', user?.rol, ')');
-    console.log('🆔 Operario ID Identificado para el registro:', operarioId);
-    console.log('📅 Fecha seleccionada:', fecha);
-    console.log('🚫 ¿Es ausencia total?:', isFullAbsence);
-    console.log('🆔 Proyecto ID:', proyectoId);
-    console.log('📝 Cliente (del proyecto):', formData.cliente);
-
-
     if (isFullAbsence) {
         // Validate Novelty
         if (!noveltyType) {
@@ -651,8 +642,6 @@ async function handleRegistroSubmit() {
             novelty: noveltyType ? { type: noveltyType, file: fileName } : null
         });
     }
-
-    console.log('📝 Preparando envío de datos:', formData);
 
     if (window.saveRegistration) {
         const result = await saveRegistration(formData);

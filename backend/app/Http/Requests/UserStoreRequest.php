@@ -9,7 +9,7 @@ class UserStoreRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        return $this->user() && $this->user()->rol === 'superadmin';
     }
 
     public function rules(): array
@@ -19,7 +19,7 @@ class UserStoreRequest extends FormRequest
             'apellido' => 'nullable|string|max:255',
             'username' => 'required|string|max:255|unique:users',
             'email' => 'nullable|string|email|max:255|unique:users',
-            'password' => 'required|string|min:6',
+            'password' => 'required|string|min:8',
             'codigo' => 'required|string|max:50|unique:users',
             'rol' => ['required', Rule::in(['superadmin', 'operario'])],
             'activo' => 'boolean',

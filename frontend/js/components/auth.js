@@ -27,14 +27,11 @@ let currentUser = {
  * @returns {Object|null} El objeto de usuario o null si no está autenticado.
  */
 function getCurrentUser() {
-    // Check sessionStorage first
     const storedUser = sessionStorage.getItem('currentUser');
     if (storedUser) {
         currentUser = JSON.parse(storedUser);
-        return currentUser;
+        return Object.freeze({ ...currentUser });
     }
-
-    // Default to null (Require Login)
     return null;
 }
 
@@ -45,8 +42,6 @@ function getCurrentUser() {
 function setCurrentUser(user) {
     currentUser = user;
     sessionStorage.setItem('currentUser', JSON.stringify(user));
-    // Also persist to localStorage for "Kiosk" effect across reloads
-    localStorage.setItem('currentUser', JSON.stringify(user));
 }
 
 
@@ -85,9 +80,8 @@ function canAccessModule(moduleName) {
         return true;
     }
 
-    // Operario can now access usuarios too
     if (user.rol === 'operario') {
-        return ['dashboard', 'registro', 'usuarios'].includes(moduleName);
+        return ['dashboard', 'registro'].includes(moduleName);
     }
 
     return false;
@@ -104,8 +98,7 @@ function getAllowedModules() {
     }
 
     if (user.rol === 'operario') {
-        // Add usuarios to the list
-        return ['dashboard', 'registro', 'usuarios'];
+        return ['dashboard', 'registro'];
     }
 
     return [];
@@ -255,7 +248,6 @@ function initInactivityTimer() {
         }
 
         inactivityTimeout = setTimeout(() => {
-            console.log("Inactividad detectada. Cerrando sesión...");
             if (window.logout) {
                 window.logout();
             } else {
