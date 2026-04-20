@@ -14,18 +14,8 @@ function loadDashboardModule() {
     destroyDashboardCharts();
     const dashboardModule = document.getElementById('module-dashboard');
 
-    // Check if current user is an operator
-    // Support both 'rol' (from auth.js) and 'role' (from old code)
-    // Check both localStorage and sessionStorage
-    let currentUser = {};
-    try {
-        const stored = localStorage.getItem('currentUser') || sessionStorage.getItem('currentUser');
-        currentUser = JSON.parse(stored || '{}');
-    } catch (e) {
-        console.error('Error parsing user data:', e);
-    }
-
-    const userRole = (currentUser.rol || currentUser.role || '').toLowerCase();
+    const currentUser = getCurrentUser() || {};
+    const userRole = (currentUser.rol || '').toLowerCase();
     const isOperator = userRole === 'operario';
 
     if (isOperator) {

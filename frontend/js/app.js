@@ -89,23 +89,6 @@ async function loadInitialData() {
     }
 }
 
-function getRegistrations() {
-    const stored = localStorage.getItem('app_registrations');
-    let regs = [];
-    if (stored) {
-        regs = JSON.parse(stored);
-    } else {
-        // Default initial data
-        regs = [
-            { id: 1, userId: 1, fecha: '2026-01-09', codigo: 'BC16', cantidad: 700, tiempo: '9:00', observaciones: 'Normal' },
-            { id: 2, userId: 1, fecha: '2026-01-08', codigo: 'BC17', cantidad: 800, tiempo: '8:30', observaciones: '' },
-            { id: 3, userId: 2, fecha: '2026-01-09', codigo: 'BC6', cantidad: 35, tiempo: '7:00', observaciones: '' }
-        ];
-        localStorage.setItem('app_registrations', JSON.stringify(regs));
-    }
-    return regs;
-}
-
 async function saveRegistration(regData) {
     if (!sessionStorage.getItem('isAuthenticated')) return;
 
