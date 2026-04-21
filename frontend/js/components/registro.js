@@ -191,31 +191,12 @@ function loadRegistroModule() {
 
                             <div class="form-group">
                                 <label for="codigo">Proceso</label>
-                                <select id="codigo" required onchange="handleProcessChange(this.value); calculatePerformance();">
+                                <select id="codigo" required onchange="calculatePerformance()">
                                     <option value="">Seleccionar proceso...</option>
                                     ${sampleData.processes.map(proc =>
         `<option value="${proc.codigo || proc.code}">${proc.codigo || proc.code} - ${proc.nombre || proc.name}</option>`
     ).join('')}
                                 </select>
-                            </div>
-
-                            <!-- Subprocesses Section -->
-                            <div class="form-group full-width" id="subprocessGroup" style="display: none; background: #f9fafb; padding: 1rem; border-radius: 8px; border: 1px solid #e5e7eb;">
-                                <label style="color: var(--primary-color); font-weight: 600; margin-bottom: 0.5rem; display: block;">Subprocesos</label>
-                                
-                                <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
-                                    <select id="subprocesoSelector" style="flex: 1;">
-                                        <option value="">Seleccionar subproceso...</option>
-                                    </select>
-                                    <button type="button" class="btn btn-secondary" onclick="addSubprocessRow()" style="white-space: nowrap;">
-                                        ➕ Agregar
-                                    </button>
-                                </div>
-
-                                <div id="subprocessList" style="display: flex; flex-direction: column; gap: 0.5rem;">
-                                    <!-- Added subprocesses will appear here -->
-                                </div>
-                                <p id="subprocessError" class="text-xs text-danger" style="display: none; margin-top: 0.5rem;">Debe agregar al menos un subproceso.</p>
                             </div>
 
                             <div class="form-group">
@@ -243,11 +224,17 @@ function loadRegistroModule() {
                             </div>
                         </div>
 
+                        <!-- Observaciones (siempre visible) -->
+                        <div class="form-group full-width">
+                            <label for="observaciones">Observaciones</label>
+                            <textarea id="observaciones" rows="3" placeholder="Notas adicionales (opcional)"></textarea>
+                        </div>
+
                         <!-- Novelty / Support Section (Collapse toggle) -->
                         <div class="form-group full-width" style="border-top: 2px dashed #e2e8f0; padding-top: 1.5rem; margin-top: 1rem;">
-                            
+
                             <h4 style="margin-bottom: 1rem; color: var(--text-primary);">Novedades y Ausencias</h4>
-                            
+
                             <!-- Full Absence Toggle moved here -->
                             <div style="margin-bottom: 1rem; padding: 1rem; background: #fff1f2; border: 1px solid #fda4af; border-radius: 8px; display: flex; align-items: center; gap: 1rem;">
                                 <input type="checkbox" id="fullAbsenceToggle" onchange="toggleFullNoveltyMode(this.checked)" style="width: 20px; height: 20px;">
@@ -277,10 +264,6 @@ function loadRegistroModule() {
                                         <input type="file" id="noveltyFile" accept=".pdf,.png,.jpg,.jpeg">
                                         <p class="text-xs text-muted">PDF o Imagen (Máx. 5MB)</p>
                                     </div>
-                                </div>
-                                <div class="form-group full-width" style="margin-top: 1rem;">
-                                    <label for="observaciones">Observaciones</label>
-                                    <textarea id="observaciones" rows="3" placeholder="Notas adicionales (opcional)"></textarea>
                                 </div>
                             </div>
                         </div>
@@ -350,25 +333,6 @@ function loadRegistroModule() {
     renderTodayRegistrations();
 }
 
-function renderProcessTable(filter = 'all') {
-    const filtered = filter === 'all'
-        ? sampleData.processes
-        : sampleData.processes.filter(p => p.category === filter);
-
-    return filtered.map(proc => `
-        <tr>
-            <td><span class="code-badge">${proc.codigo || proc.code}</span></td>
-            <td>
-                <strong>${proc.nombre || proc.name}</strong>
-                <div class="text-xs text-muted" style="margin-top: 0.25rem;">
-                    ${proc.subprocesos ? (Array.isArray(proc.subprocesos) ? proc.subprocesos.join(' • ') : proc.subprocesos) : 'Sin subprocesos'}
-                </div>
-            </td>
-            <td class="text-muted">${proc.unidad || proc.unit}</td>
-        </tr>
-    `).join('');
-}
-
 function initRegistroFormHandlers() {
     const form = document.getElementById('registroForm');
     if (form) {
@@ -386,18 +350,6 @@ function initRegistroFormHandlers() {
             submitBtn.innerHTML = originalText;
         });
     }
-
-    const filterTabs = document.querySelectorAll('.filter-tab');
-    filterTabs.forEach(tab => {
-        tab.addEventListener('click', function () {
-            filterTabs.forEach(t => t.classList.remove('active'));
-            this.classList.add('active');
-
-            const filter = this.getAttribute('data-filter');
-            const tbody = document.getElementById('processTableBody');
-            if (tbody) tbody.innerHTML = renderProcessTable(filter);
-        });
-    });
 }
 
 // --- Handler Functions ---
@@ -438,116 +390,6 @@ function toggleFullNoveltyMode(checked) {
     }
 }
 
-let activeSubprocesses = [];
-
-function handleProcessChange(processCode) {
-    const subGroup = document.getElementById('subprocessGroup');
-    const subSelector = document.getElementById('subprocesoSelector');
-    const cantidadInput = document.getElementById('cantidad');
-    const cantidadHelp = document.getElementById('cantidadHelp');
-
-    // Reset list
-    activeSubprocesses = [];
-    document.getElementById('subprocessList').innerHTML = '';
-
-    if (!processCode) {
-        subGroup.style.display = 'none';
-        cantidadInput.readOnly = false;
-        cantidadInput.value = '';
-        cantidadHelp.textContent = 'Suma total de unidades.';
-        return;
-    }
-
-    const process = sampleData.processes.find(p => (p.codigo || p.code) === processCode);
-
-    // Normalize subprocesses: handle both field names and JSON string format
-    if (process) {
-        let subs = process.subprocesses || process.subprocesos || [];
-        if (typeof subs === 'string') {
-            try { subs = JSON.parse(subs); } catch (e) { subs = []; }
-        }
-        process._subs = Array.isArray(subs) ? subs : [];
-    }
-
-    if (process && process._subs && process._subs.length > 0) {
-        // Show subprocess section
-        subSelector.innerHTML = '<option value="">Seleccionar subproceso...</option>' +
-            process._subs.map(s => `<option value="${s}">${s}</option>`).join('');
-        subGroup.style.display = 'block';
-
-        // Lock total quantity (calculated from subprocesses)
-        cantidadInput.value = 0;
-        cantidadInput.readOnly = true;
-        cantidadInput.placeholder = "Agregue subprocesos...";
-        cantidadHelp.textContent = "Calculado automáticamente de los subprocesos.";
-    } else {
-        // Hide subprocess section, normal quantity input
-        subGroup.style.display = 'none';
-        cantidadInput.readOnly = false;
-        cantidadInput.placeholder = "Ej: 450";
-        cantidadHelp.textContent = "Cantidad total.";
-    }
-}
-
-function addSubprocessRow() {
-    const selector = document.getElementById('subprocesoSelector');
-    const name = selector.value;
-
-    if (!name) return;
-
-    // Check availability
-    if (activeSubprocesses.some(s => s.name === name)) {
-        showToast('⚠️ Este subproceso ya ha sido agregado', 'warning');
-        return;
-    }
-
-    const id = Date.now().toString(); // Simple ID for DOM removal
-    activeSubprocesses.push({ id, name, qty: 0 });
-
-    // Add DOM element
-    const list = document.getElementById('subprocessList');
-    const div = document.createElement('div');
-    div.id = `sub-row-${id}`;
-    div.style.cssText = 'display: flex; align-items: center; gap: 0.5rem; background: #fff; padding: 0.5rem; border-radius: 6px; border: 1px solid #eee;';
-    div.innerHTML = `
-        <div style="flex: 2; font-weight: 500;">${name}</div>
-        <div style="flex: 1;">
-            <input type="number" min="1" placeholder="Cant." class="sub-qty" 
-                   onchange="updateSubprocessQty('${id}', this.value)" 
-                   style="width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 4px;">
-        </div>
-        <button type="button" class="btn-icon text-danger" onclick="removeSubprocessRow('${id}')">✕</button>
-    `;
-    list.appendChild(div);
-
-    // Reset selector
-    selector.value = '';
-
-    // Hide error if present
-    document.getElementById('subprocessError').style.display = 'none';
-}
-
-function updateSubprocessQty(id, value) {
-    const item = activeSubprocesses.find(s => s.id === id);
-    if (item) {
-        item.qty = parseInt(value) || 0;
-        updateTotalQuantity();
-    }
-}
-
-function removeSubprocessRow(id) {
-    activeSubprocesses = activeSubprocesses.filter(s => s.id !== id);
-    const row = document.getElementById(`sub-row-${id}`);
-    if (row) row.remove();
-    updateTotalQuantity();
-}
-
-function updateTotalQuantity() {
-    const total = activeSubprocesses.reduce((acc, curr) => acc + curr.qty, 0);
-    document.getElementById('cantidad').value = total;
-    calculatePerformance(); // Actualizar semaforo
-}
-
 async function handleRegistroSubmit() {
     // 1. Common Fields
     const user = getCurrentUser();
@@ -585,12 +427,9 @@ async function handleRegistroSubmit() {
             return;
         }
 
-        // For full absence, we use "NOVEDAD" or similar as client/code placeholder if strictly needed by UI, 
-        // but type='novedad_total' should handle logic.
         Object.assign(formData, {
-            cliente: 'NOVEDAD', // Override client for full absence
+            cliente: 'NOVEDAD',
             codigo: 'NOV',
-            subproceso: '-',
             cantidad: 0,
             tiempo: '0:00',
             type: 'novedad_total',
@@ -601,44 +440,16 @@ async function handleRegistroSubmit() {
         });
 
     } else {
-        // Normal Production Logic
         const processCode = document.getElementById('codigo').value;
-        const isSubprocessActive = document.getElementById('subprocessGroup').style.display !== 'none';
-
-        // Validate Subprocesses
-        if (isSubprocessActive) {
-            if (activeSubprocesses.length === 0) {
-                document.getElementById('subprocessError').style.display = 'block';
-                showToast('⚠️ Debe agregar al menos un subproceso', 'warning');
-                return;
-            }
-            if (activeSubprocesses.some(s => s.qty <= 0)) {
-                showToast('⚠️ Todos los subprocesos deben tener cantidad mayor a 0', 'warning');
-                return;
-            }
-        }
-
         const cantidad = parseInt(document.getElementById('cantidad').value);
-
-        let subprocesoStr = "";
-        let subprocesosDetalle = [];
-
-        if (isSubprocessActive) {
-            subprocesoStr = activeSubprocesses.length === 1 ? activeSubprocesses[0].name : "Múltiples";
-            subprocesosDetalle = activeSubprocesses.map(s => ({ name: s.name, cantidad: s.qty }));
-        } else {
-            subprocesoStr = "-";
-        }
 
         Object.assign(formData, {
             codigo: processCode,
-            subproceso: subprocesoStr,
-            subprocesos_detalle: subprocesosDetalle,
             cantidad: cantidad,
             tiempo: document.getElementById('tiempoCalculado').value,
             horaInicio: document.getElementById('horaInicio').value,
             horaFin: document.getElementById('horaFin').value,
-            type: 'production',
+            type: 'produccion',
             novelty: noveltyType ? { type: noveltyType, file: fileName } : null
         });
     }
@@ -680,19 +491,6 @@ function clearRegistroForm() {
         fechaInput.value = localDate;
         const status = document.getElementById('fechaStatus');
         if (status) status.textContent = '';
-    }
-
-    // Reset subprocess vars/ui
-    activeSubprocesses = [];
-    const subList = document.getElementById('subprocessList');
-    if (subList) subList.innerHTML = '';
-    const subGroup = document.getElementById('subprocessGroup');
-    if (subGroup) subGroup.style.display = 'none';
-
-    const cantInput = document.getElementById('cantidad');
-    if (cantInput) {
-        cantInput.readOnly = false;
-        cantInput.placeholder = "0";
     }
 
     const durationDisplay = document.getElementById('durationDisplay');
@@ -803,30 +601,30 @@ function renderTodayRegistrations() {
         return;
     }
 
+    const tipoNovedad = r => r.tipo === 'novedad_total' || r.type === 'novedad_total' || r.type === 'novelty';
+
     todayBody.innerHTML = regs.map(r => {
-        const isNovelty = r.type === 'novedad_total' || r.type === 'novelty';
-        // Check if there is a process matched
-        let procName = isNovelty ? (r.novelty?.type || 'Novedad') : (r.codigo || '-');
-        
-        let detailStr = '';
-        if (isNovelty) {
-            detailStr = r.observaciones || 'Día completo';
-        } else {
-            if (r.subprocesos_detalle && r.subprocesos_detalle.length > 0) {
-                detailStr = r.subprocesos_detalle.map(st => `${st.name}: ${st.cantidad}`).join(', ');
-            } else {
-                detailStr = r.subproceso && r.subproceso !== '-' ? r.subproceso : 'Sin subproceso';
-            }
-        }
-        
+        const isNovelty = tipoNovedad(r);
+        const procName = isNovelty
+            ? (r.novedad_tipo || r.novelty?.type || 'Novedad')
+            : (r.codigo || '-');
+
+        const obs = (r.observaciones || '').trim();
+        const detailStr = isNovelty
+            ? (obs || 'Día completo')
+            : (obs || 'Sin observaciones');
+
+        const cantidad = parseInt(r.cantidad || 0);
+        const tiempo = r.tiempo || '0:00';
+
         return `
             <tr style="font-size: 0.85rem; ${isNovelty ? 'background-color: #f0fdf4;' : ''}">
                 <td>
-                    <div style="font-weight: 600; color: var(--text-primary);">${procName}</div>
-                    <div style="color: var(--text-muted); font-size: 0.75rem; max-width: 140px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${detailStr}">${detailStr}</div>
+                    <div style="font-weight: 600; color: var(--text-primary);">${escapeHtml(procName)}</div>
+                    <div style="color: var(--text-muted); font-size: 0.75rem; max-width: 140px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(detailStr)}">${escapeHtml(detailStr)}</div>
                 </td>
-                <td style="font-weight: 500;">${isNovelty ? 'N/A' : (r.cantidad || 0)}</td>
-                <td style="color: var(--text-secondary);"><span class="badge ${isNovelty ? 'badge-primary' : 'badge-secondary'}" style="font-size: 0.7rem;">${r.tiempo || '0:00'}</span></td>
+                <td style="font-weight: 500;">${isNovelty ? 'N/A' : cantidad}</td>
+                <td style="color: var(--text-secondary);"><span class="badge ${isNovelty ? 'badge-primary' : 'badge-secondary'}" style="font-size: 0.7rem;">${escapeHtml(tiempo)}</span></td>
             </tr>
         `;
     }).join('');

@@ -55,8 +55,9 @@ async function loadInitialData() {
     if (!sessionStorage.getItem('isAuthenticated')) return;
 
     try {
-        // Load Users
-        if (typeof syncUsers === 'function') {
+        // Load Users (solo superadmin puede listar)
+        const currentUser = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
+        if (currentUser && currentUser.rol === 'superadmin' && typeof syncUsers === 'function') {
             await syncUsers();
         }
 

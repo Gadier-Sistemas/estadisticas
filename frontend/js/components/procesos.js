@@ -5,7 +5,7 @@ function loadProcesosModule() {
     procesosModule.innerHTML = `
         <div class="module-header">
             <h2>Gestión de Procesos</h2>
-            <p class="module-description">Administración de códigos de proceso y subprocesos</p>
+            <p class="module-description">Administración de códigos de proceso</p>
         </div>
 
         <div class="procesos-header-actions" style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
@@ -111,9 +111,9 @@ function renderProcessesTableRows(filter = 'all', searchTerm = '') {
                 <span class="code-badge">${proc.codigo || proc.code}</span>
             </td>
             <td>
-                <strong>${proc.nombre || proc.name}</strong>
+                <strong>${escapeHtml(proc.nombre || proc.name || '')}</strong>
                 <div class="text-xs text-muted" style="margin-top: 0.25rem;">
-                    ${(proc.subprocesos || proc.subprocesses) ? (Array.isArray(proc.subprocesos || proc.subprocesses) ? (proc.subprocesos || proc.subprocesses).join(' • ') : (proc.subprocesos || proc.subprocesses)) : 'Sin subprocesos'}
+                    ${escapeHtml(proc.categoria || '')}
                 </div>
             </td>
             <td class="text-muted">${proc.unidad || '-'}</td>

@@ -572,40 +572,30 @@ function showDayDetail(userId, dateString) {
                         <tr>
                             <th>Cliente</th>
                             <th>Proceso</th>
-                            <th>Subproceso</th>
+                            <th>Observaciones</th>
                             <th>Cantidad</th>
                             <th>Tiempo</th>
                         </tr>
                     </thead>
                     <tbody>
                         ${regs.map(r => {
-            const proc = sampleData.processes.find(p => p.code === r.codigo);
-            const isNovelty = r.type === 'novedad_total';
-
-            // Build subproceso cell content
-            let subprocesoContent = r.subproceso || '-';
-            if (r.subprocesos_detalle && r.subprocesos_detalle.length > 0) {
-                const details = r.subprocesos_detalle.map(d =>
-                    `<div style="display: flex; justify-content: space-between; font-size: 0.85em;"><span>${d.name}</span> <span style="font-weight: 600;">${d.cantidad}</span></div>`
-                ).join('');
-                subprocesoContent = `<div style="display: flex; flex-direction: column; gap: 2px;">
-                    <div style="font-weight: 500; margin-bottom: 2px;">Múltiples:</div>
-                    ${details}
-                </div>`;
-            }
+            const isNovelty = r.tipo === 'novedad_total' || r.type === 'novedad_total';
+            const obs = (r.observaciones || '').trim();
+            const observacionesCell = obs || (isNovelty ? '-' : 'Sin observaciones');
+            const noveltyLabel = r.novedad_tipo || r.novelty?.type || 'Novedad';
 
             return `
                             <tr style="${isNovelty ? 'background-color: #f0f7ff;' : ''}">
-                                <td><span style="font-weight: 500;">${r.cliente || 'GADIER'}</span></td>
+                                <td><span style="font-weight: 500;">${escapeHtml(r.cliente || 'GADIER')}</span></td>
                                 <td>
                                     ${isNovelty ?
-                    `<span class="badge" style="background: #3b82f6; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem;">${r.novelty?.type || 'Novedad'}</span>` :
-                    `<span class="code-badge">${r.codigo}</span>`
+                    `<span class="badge" style="background: #3b82f6; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem;">${escapeHtml(noveltyLabel)}</span>` :
+                    `<span class="code-badge">${escapeHtml(r.codigo || '-')}</span>`
                 }
                                 </td>
-                                <td class="text-muted">${isNovelty ? (r.observaciones || '-') : subprocesoContent}</td>
-                                <td>${isNovelty ? '-' : formatNumber(r.cantidad)}</td>
-                                <td><span class="time-badge">${r.tiempo || '0:00'}</span></td>
+                                <td class="text-muted">${escapeHtml(observacionesCell)}</td>
+                                <td>${isNovelty ? '-' : formatNumber(parseInt(r.cantidad || 0))}</td>
+                                <td><span class="time-badge">${escapeHtml(r.tiempo || '0:00')}</span></td>
                             </tr>
                         `;
         }).join('')}

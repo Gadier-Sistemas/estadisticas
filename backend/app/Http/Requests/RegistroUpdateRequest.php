@@ -19,11 +19,11 @@ class RegistroUpdateRequest extends FormRequest
             'proceso_codigo' => 'sometimes|string|exists:procesos,codigo',
             'fecha' => 'sometimes|date',
             'cantidad' => 'sometimes|integer|min:1',
-            'tiempo' => 'sometimes|string|regex:/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/',
+            'tiempo' => ['sometimes', 'string', 'regex:/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/'],
             'cliente' => 'nullable|string|max:255',
             'observaciones' => 'nullable|string|max:1000',
-            'tipo' => 'nullable|string',
-            'novedad_tipo' => 'nullable|string',
+            'tipo' => 'nullable|in:produccion,novedad_total',
+            'novedad_tipo' => 'nullable|string|max:100',
         ];
     }
 }

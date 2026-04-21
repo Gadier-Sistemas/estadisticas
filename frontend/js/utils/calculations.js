@@ -2,6 +2,20 @@
 // Based on formulas extracted from Excel file
 
 /**
+ * Escape user-controlled text before injecting into innerHTML or HTML attributes.
+ * Cubre <, >, &, ", ' para prevenir XSS y romper atributos.
+ */
+function escapeHtml(value) {
+    if (value === null || value === undefined) return '';
+    return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+/**
  * Get week number from date (ISO 8601 standard)
  * Excel: =NUM.DE.SEMANA(fecha)
  */
