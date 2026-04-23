@@ -132,11 +132,15 @@ function loadRegistroModule() {
         <div class="module-header">
             <h2>Registro de Estadística</h2>
             <p class="module-description">Captura de datos de trabajo por operario</p>
+            <div style="margin-top: 0.75rem; display: inline-flex; background: #f1f5f9; padding: 0.25rem; border-radius: 8px; gap: 0.25rem;">
+                <button type="button" id="btnModoFormulario" onclick="setRegistroMode('form')" style="padding: 0.4rem 0.9rem; border: none; border-radius: 6px; background: var(--primary-color); color: white; font-weight: 600; font-size: 0.85rem; cursor: pointer;">📝 Formulario</button>
+                <button type="button" id="btnModoTabla" onclick="setRegistroMode('table')" style="padding: 0.4rem 0.9rem; border: none; border-radius: 6px; background: transparent; color: var(--text-secondary); font-weight: 600; font-size: 0.85rem; cursor: pointer;">📋 Tabla múltiple</button>
+            </div>
         </div>
 
         <div class="registro-container">
             <div class="registro-form-section">
-                <div class="form-card">
+                <div class="form-card" id="modoFormularioContainer">
                     <div class="form-header">
                         <h3>📝 Nueva Estadística</h3>
                     </div>
@@ -183,7 +187,7 @@ function loadRegistroModule() {
                                 <select id="proyecto" required onchange="handleProjectChange(this.value)">
                                     <option value="">Seleccionar proyecto...</option>
                                     ${(sampleData.projects || []).map(p => `
-                                        <option value="${p.id}">${p.nombre} (${p.cliente})</option>
+                                        <option value="${p.id}">${escapeHtml(p.nombre)} (${escapeHtml(p.cliente || '')})</option>
                                     `).join('')}
                                 </select>
                                 <input type="hidden" id="cliente" value="">
@@ -193,9 +197,11 @@ function loadRegistroModule() {
                                 <label for="codigo">Proceso</label>
                                 <select id="codigo" required onchange="calculatePerformance()">
                                     <option value="">Seleccionar proceso...</option>
-                                    ${sampleData.processes.map(proc =>
-        `<option value="${proc.codigo || proc.code}">${proc.codigo || proc.code} - ${proc.nombre || proc.name}</option>`
-    ).join('')}
+                                    ${sampleData.processes.map(proc => {
+                                        const code = proc.codigo || proc.code || '';
+                                        const name = proc.nombre || proc.name || '';
+                                        return `<option value="${escapeHtml(code)}">${escapeHtml(code)} - ${escapeHtml(name)}</option>`;
+                                    }).join('')}
                                 </select>
                             </div>
 
@@ -221,6 +227,14 @@ function loadRegistroModule() {
                                     <!-- Badge de rendimiento inyectado aquí -->
                                 </div>
                                 <input type="hidden" id="tiempoCalculado" value="00:00">
+                            </div>
+
+                            <div class="form-group full-width" style="background: #fef9c3; border: 1px dashed #eab308; border-radius: 8px; padding: 0.75rem 1rem; display: flex; align-items: center; gap: 0.75rem;">
+                                <input type="checkbox" id="mediaJornadaToggle" onchange="calculatePerformance()" style="width: 18px; height: 18px;">
+                                <div>
+                                    <label for="mediaJornadaToggle" style="font-weight: 600; color: #854d0e; cursor: pointer;">Media jornada (270 min)</label>
+                                    <p class="text-xs text-muted" style="margin: 0;">Márquelo si trabajó solo media jornada. El rendimiento se calcula contra 270 min en lugar de 540.</p>
+                                </div>
                             </div>
                         </div>
 
@@ -278,6 +292,45 @@ function loadRegistroModule() {
                         </div>
                     </form>
                 </div>
+
+                <div class="form-card" id="modoTablaContainer" style="display: none;">
+                    <div class="form-header">
+                        <h3>📋 Registro Tabla Múltiple</h3>
+                        <p class="text-xs text-muted">Registra varias actividades del día de una sola vez. Máximo 50 filas por envío.</p>
+                    </div>
+
+                    <div style="margin-bottom: 1rem; padding: 0.75rem 1rem; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px;">
+                        <label style="font-weight: 600; color: var(--primary-color); display: block; margin-bottom: 0.25rem;">Fecha</label>
+                        <input type="date" id="tablaFecha" style="padding: 0.4rem; border: 1px solid #ddd; border-radius: 6px;">
+                        <span id="tablaFechaStatus" style="margin-left: 0.75rem; font-size: 0.8rem; color: var(--text-secondary);"></span>
+                    </div>
+
+                    <div class="table-container" style="max-height: 500px; overflow-y: auto;">
+                        <table class="data-table" id="multiActivityTable">
+                            <thead>
+                                <tr>
+                                    <th style="min-width: 180px;">Proyecto</th>
+                                    <th style="min-width: 180px;">Proceso</th>
+                                    <th style="width: 100px;">Cantidad</th>
+                                    <th style="width: 120px;">Hora inicio</th>
+                                    <th style="width: 120px;">Hora fin</th>
+                                    <th style="width: 80px;" title="Media jornada">½ J.</th>
+                                    <th style="width: 50px;"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="multiActivityTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div style="margin-top: 1rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;">
+                        <button type="button" class="btn btn-secondary" onclick="addTableRow()">➕ Agregar fila</button>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <button type="button" class="btn btn-secondary" onclick="clearTableRows()">🗑️ Limpiar</button>
+                            <button type="button" class="btn btn-primary" id="btnGuardarBatch" onclick="saveBatchRegistrations()">💾 Guardar todas</button>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <div class="registro-reference-section">
@@ -317,12 +370,20 @@ function loadRegistroModule() {
     if (fInput) {
         const today = new Date();
         const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-        const dateToUse = window.nextRegistrationDate || todayStr;
+        const isSuperadmin = user && user.rol === 'superadmin';
+        const dateToUse = (isSuperadmin && window.nextRegistrationDate) ? window.nextRegistrationDate : todayStr;
         fInput.value = dateToUse;
 
-        // Show status if it's a past date
+        // Operario solo puede registrar el día actual (Req 7); superadmin puede libre
+        if (!isSuperadmin) {
+            fInput.min = todayStr;
+            fInput.max = todayStr;
+            fInput.readOnly = true;
+        }
+
+        // Show status if it's a past date (solo aplica a superadmin)
         const status = document.getElementById('fechaStatus');
-        if (status && window.nextRegistrationDate && window.nextRegistrationDate !== todayStr) {
+        if (status && isSuperadmin && window.nextRegistrationDate && window.nextRegistrationDate !== todayStr) {
             status.textContent = '📍 Registrando para día seleccionado: ' + window.nextRegistrationDate;
         }
 
@@ -412,12 +473,15 @@ async function handleRegistroSubmit() {
     const fileInput = document.getElementById('noveltyFile');
     const fileName = (fileInput && fileInput.files.length > 0) ? fileInput.files[0].name : null;
 
+    const isMediaJornada = document.getElementById('mediaJornadaToggle')?.checked === true;
+
     let formData = {
         userId: parseInt(operarioId),
         proyecto_id: proyectoId ? parseInt(proyectoId) : null,
         fecha: fecha,
         observaciones: observaciones,
-        cliente: document.getElementById('cliente').value
+        cliente: document.getElementById('cliente').value,
+        media_jornada: isMediaJornada
     };
 
     if (isFullAbsence) {
@@ -555,11 +619,14 @@ function calculatePerformance() {
 
     if (totalMinutes <= 0) return;
 
-    // Fórmula: Cantidad / ((Meta / 540) * TotalMinutos)
+    // Fórmula: Cantidad / ((Meta / jornadaMin) * TotalMinutos)
+    // jornadaMin = 270 si media jornada, 540 jornada completa
     const metaDiaria = process.meta_diaria || process.cantidad || 0;
     if (metaDiaria <= 0) return; // Si no hay meta, no calculamos
 
-    const produccionEsperada = (metaDiaria / 540) * totalMinutes;
+    const isMediaJornada = document.getElementById('mediaJornadaToggle')?.checked === true;
+    const jornadaMin = isMediaJornada ? 270 : 540;
+    const produccionEsperada = (metaDiaria / jornadaMin) * totalMinutes;
 
     if (produccionEsperada > 0) {
         const rendimiento = (parseInt(cantidadInput) / produccionEsperada) * 100;
@@ -616,11 +683,14 @@ function renderTodayRegistrations() {
 
         const cantidad = parseInt(r.cantidad || 0);
         const tiempo = r.tiempo || '0:00';
+        const mediaBadge = (r.media_jornada === true || r.media_jornada === 1)
+            ? '<span style="display: inline-block; background: #fef9c3; color: #854d0e; font-size: 0.65rem; padding: 1px 6px; border-radius: 8px; margin-left: 4px; border: 1px solid #eab308;">½ jornada</span>'
+            : '';
 
         return `
             <tr style="font-size: 0.85rem; ${isNovelty ? 'background-color: #f0fdf4;' : ''}">
                 <td>
-                    <div style="font-weight: 600; color: var(--text-primary);">${escapeHtml(procName)}</div>
+                    <div style="font-weight: 600; color: var(--text-primary);">${escapeHtml(procName)}${mediaBadge}</div>
                     <div style="color: var(--text-muted); font-size: 0.75rem; max-width: 140px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(detailStr)}">${escapeHtml(detailStr)}</div>
                 </td>
                 <td style="font-weight: 500;">${isNovelty ? 'N/A' : cantidad}</td>
@@ -630,3 +700,239 @@ function renderTodayRegistrations() {
     }).join('');
 }
 
+// --- Modo Tabla (Req 3) ---
+
+const MULTI_MAX_ROWS = 50;
+let multiRowCounter = 0;
+
+function setRegistroMode(mode) {
+    const formContainer = document.getElementById('modoFormularioContainer');
+    const tableContainer = document.getElementById('modoTablaContainer');
+    const btnForm = document.getElementById('btnModoFormulario');
+    const btnTable = document.getElementById('btnModoTabla');
+
+    if (!formContainer || !tableContainer) return;
+
+    const active = 'background: var(--primary-color); color: white;';
+    const inactive = 'background: transparent; color: var(--text-secondary);';
+
+    if (mode === 'table') {
+        formContainer.style.display = 'none';
+        tableContainer.style.display = '';
+        btnForm.style.cssText = btnForm.style.cssText.replace(active, '') + inactive;
+        btnTable.style.cssText = btnTable.style.cssText.replace(inactive, '') + active;
+
+        initMultiActivityTable();
+    } else {
+        formContainer.style.display = '';
+        tableContainer.style.display = 'none';
+        btnForm.style.cssText = btnForm.style.cssText.replace(inactive, '') + active;
+        btnTable.style.cssText = btnTable.style.cssText.replace(active, '') + inactive;
+    }
+}
+
+function initMultiActivityTable() {
+    const user = getCurrentUser();
+    const isSuperadmin = user && user.rol === 'superadmin';
+    const fechaInput = document.getElementById('tablaFecha');
+    const status = document.getElementById('tablaFechaStatus');
+    if (!fechaInput) return;
+
+    const today = new Date();
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    fechaInput.value = todayStr;
+
+    if (!isSuperadmin) {
+        fechaInput.min = todayStr;
+        fechaInput.max = todayStr;
+        fechaInput.readOnly = true;
+        if (status) status.textContent = 'Solo día actual';
+    } else {
+        fechaInput.min = '';
+        fechaInput.max = '';
+        fechaInput.readOnly = false;
+        if (status) status.textContent = '(Superadmin: puede seleccionar cualquier fecha)';
+    }
+
+    const tbody = document.getElementById('multiActivityTableBody');
+    if (tbody && tbody.children.length === 0) {
+        addTableRow();
+    }
+}
+
+function projectOptionsHtml() {
+    const projects = sampleData.projects || [];
+    return '<option value="">Seleccionar...</option>' + projects.map(p =>
+        `<option value="${p.id}">${escapeHtml(p.nombre)} (${escapeHtml(p.cliente || '')})</option>`
+    ).join('');
+}
+
+function processOptionsHtml() {
+    const procs = sampleData.processes || [];
+    return '<option value="">Seleccionar...</option>' + procs.map(p => {
+        const code = p.codigo || p.code;
+        const name = p.nombre || p.name || '';
+        return `<option value="${escapeHtml(code)}">${escapeHtml(code)} - ${escapeHtml(name)}</option>`;
+    }).join('');
+}
+
+function addTableRow() {
+    const tbody = document.getElementById('multiActivityTableBody');
+    if (!tbody) return;
+    if (tbody.children.length >= MULTI_MAX_ROWS) {
+        showToast(`⚠️ Máximo ${MULTI_MAX_ROWS} filas por envío`, 'warning');
+        return;
+    }
+
+    multiRowCounter += 1;
+    const id = `mrow-${multiRowCounter}`;
+    const tr = document.createElement('tr');
+    tr.id = id;
+    tr.innerHTML = `
+        <td><select class="multi-proyecto" style="width: 100%; padding: 0.3rem;">${projectOptionsHtml()}</select></td>
+        <td><select class="multi-proceso" style="width: 100%; padding: 0.3rem;">${processOptionsHtml()}</select></td>
+        <td><input type="number" class="multi-cantidad" min="1" placeholder="0" style="width: 100%; padding: 0.3rem;"></td>
+        <td><input type="time" class="multi-hora-inicio" style="width: 100%; padding: 0.3rem;"></td>
+        <td><input type="time" class="multi-hora-fin" style="width: 100%; padding: 0.3rem;"></td>
+        <td style="text-align: center;"><input type="checkbox" class="multi-media-jornada"></td>
+        <td style="text-align: center;"><button type="button" class="btn-icon text-danger" onclick="removeTableRow('${id}')" style="background: #fee2e2; border: none; padding: 0.25rem 0.5rem; border-radius: 4px; cursor: pointer;">✕</button></td>
+    `;
+    tbody.appendChild(tr);
+}
+
+function removeTableRow(id) {
+    const row = document.getElementById(id);
+    if (row) row.remove();
+}
+
+function clearTableRows() {
+    const tbody = document.getElementById('multiActivityTableBody');
+    if (tbody) tbody.innerHTML = '';
+    addTableRow();
+}
+
+function collectMultiRows() {
+    const rows = document.querySelectorAll('#multiActivityTableBody tr');
+    const result = [];
+    const errores = [];
+
+    rows.forEach((tr, idx) => {
+        const proyectoId = tr.querySelector('.multi-proyecto').value;
+        const procesoCodigo = tr.querySelector('.multi-proceso').value;
+        const cantidad = tr.querySelector('.multi-cantidad').value;
+        const horaInicio = tr.querySelector('.multi-hora-inicio').value;
+        const horaFin = tr.querySelector('.multi-hora-fin').value;
+        const mediaJornada = tr.querySelector('.multi-media-jornada').checked;
+
+        if (!proyectoId || !procesoCodigo || !cantidad || !horaInicio || !horaFin) {
+            errores.push(`Fila ${idx + 1}: faltan datos obligatorios`);
+            return;
+        }
+
+        const [h1, m1] = horaInicio.split(':').map(Number);
+        const [h2, m2] = horaFin.split(':').map(Number);
+        const totalMin = (h2 * 60 + m2) - (h1 * 60 + m1);
+
+        if (totalMin <= 0) {
+            errores.push(`Fila ${idx + 1}: hora fin debe ser posterior a hora inicio`);
+            return;
+        }
+
+        const qty = parseInt(cantidad);
+        if (isNaN(qty) || qty < 1) {
+            errores.push(`Fila ${idx + 1}: cantidad debe ser al menos 1`);
+            return;
+        }
+
+        const hours = Math.floor(totalMin / 60);
+        const mins = totalMin % 60;
+        const tiempo = `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
+
+        const project = (sampleData.projects || []).find(p => parseInt(p.id) === parseInt(proyectoId));
+
+        result.push({
+            proyecto_id: parseInt(proyectoId),
+            proceso_codigo: procesoCodigo,
+            cantidad: qty,
+            tiempo: tiempo,
+            media_jornada: mediaJornada,
+            cliente: project ? project.cliente : null,
+            tipo: 'produccion',
+        });
+    });
+
+    return { rows: result, errores };
+}
+
+async function saveBatchRegistrations() {
+    const btn = document.getElementById('btnGuardarBatch');
+    const fechaInput = document.getElementById('tablaFecha');
+    if (!fechaInput || !fechaInput.value) {
+        showToast('⚠️ Selecciona una fecha', 'warning');
+        return;
+    }
+
+    const { rows, errores } = collectMultiRows();
+
+    if (errores.length > 0) {
+        showToast(`⚠️ ${errores[0]}`, 'warning');
+        return;
+    }
+
+    if (rows.length === 0) {
+        showToast('⚠️ Agrega al menos una fila', 'warning');
+        return;
+    }
+
+    const payload = {
+        registros: rows.map(r => ({ ...r, fecha: fechaInput.value })),
+    };
+
+    const originalText = btn ? btn.innerHTML : '';
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '⌛ Guardando...';
+    }
+
+    try {
+        const res = await fetch(`${API_URL}/registros/batch`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${sessionStorage.getItem('authToken')}`,
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        });
+
+        if (res.status === 201) {
+            const data = await res.json();
+            showToast(`✅ ${data.total} registros guardados`, 'success');
+            clearTableRows();
+            if (typeof syncRegistrations === 'function') await syncRegistrations();
+            renderTodayRegistrations();
+            if (typeof renderAlerts === 'function') renderAlerts();
+        } else if (res.status === 422) {
+            const data = await res.json();
+            if (data.errores && Array.isArray(data.errores) && data.errores.length > 0) {
+                const primero = data.errores[0];
+                const msg = primero.mensajes ? primero.mensajes[0] : 'Validación fallida';
+                showToast(`❌ Fila ${(primero.index ?? 0) + 1}: ${msg}`, 'error');
+            } else {
+                showToast('❌ ' + (data.message || 'Validación fallida'), 'error');
+            }
+        } else if (res.status === 429) {
+            showToast('⚠️ Demasiadas solicitudes. Intenta en un momento.', 'warning');
+        } else {
+            showToast('❌ Error del servidor', 'error');
+        }
+    } catch (err) {
+        console.error(err);
+        showToast('❌ Error de red al guardar', 'error');
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        }
+    }
+}

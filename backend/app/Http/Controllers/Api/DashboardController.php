@@ -75,7 +75,7 @@ class DashboardController extends Controller
 
         $query = Registro::with(['proceso', 'user', 'proyecto'])
             ->where('fecha', $fecha)
-            ->where('tipo', '!=', 'novedad');
+            ->where('tipo', '!=', 'novedad_total');
 
         // Si es operario, solo sus registros
         if ($request->user()->rol !== 'superadmin') {
@@ -158,7 +158,7 @@ class DashboardController extends Controller
     {
         $query = Registro::with('proceso')
             ->where('fecha', $fecha)
-            ->where('tipo', '!=', 'novedad');
+            ->where('tipo', '!=', 'novedad_total');
 
         if ($userId !== null) {
             $query->where('user_id', $userId);

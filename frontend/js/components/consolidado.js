@@ -245,15 +245,15 @@ function renderDetalleTable(detalle) {
 
         return `
             <tr>
-                <td>${d.operario}</td>
-                <td><span class="code-badge">${d.proceso_codigo}</span></td>
-                <td>${d.proceso_nombre}</td>
-                <td>${d.proyecto}</td>
-                <td><strong>${formatNumber(d.cantidad)}</strong> ${d.unidad}</td>
-                <td>${d.tiempo} (${d.minutos_trabajados} min)</td>
+                <td>${escapeHtml(d.operario)}</td>
+                <td><span class="code-badge">${escapeHtml(d.proceso_codigo)}</span></td>
+                <td>${escapeHtml(d.proceso_nombre)}</td>
+                <td>${escapeHtml(d.proyecto)}</td>
+                <td><strong>${formatNumber(d.cantidad)}</strong> ${escapeHtml(d.unidad || '')}</td>
+                <td>${escapeHtml(d.tiempo)} (${d.minutos_trabajados} min)</td>
                 <td>${formatNumber(Math.round(d.produccion_esperada))}</td>
                 <td style="color: ${semaforoColor}; font-weight: 700;">${semaforoIcon} ${d.rendimiento_porcentaje}%</td>
-                <td>${d.observaciones || '—'}</td>
+                <td>${escapeHtml(d.observaciones || '—')}</td>
             </tr>
         `;
     }).join('');

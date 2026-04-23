@@ -18,6 +18,7 @@ function loadProcesosModule() {
             ${(window.getCurrentUser && window.getCurrentUser().rol === 'superadmin') ? `
             <div style="display: flex; gap: 0.75rem; margin-left: auto;">
                 <button class="btn btn-secondary" onclick="showProjectsModal()">🏷️ Proyectos</button>
+                <button class="btn btn-secondary" onclick="showImportProcessModal()">📥 Importar Excel</button>
                 <button class="btn btn-primary" onclick="showProcessModal()">➕ Crear Proceso</button>
             </div>
             ` : ''}
@@ -172,8 +173,8 @@ function viewProcessDetail(code) {
         <div class="modal-content" style="background: white; padding: 2rem; border-radius: 12px; width: 90%; max-width: 500px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);">
             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; border-bottom: 1px solid #eee; padding-bottom: 1rem;">
                 <div>
-                    <h3 style="margin: 0; color: var(--text-color);">${process.codigo} - ${process.nombre}</h3>
-                    <p style="margin: 0; margin-top: 5px; color: var(--text-muted); font-size: 0.85em;">Categoría: ${process.categoria}</p>
+                    <h3 style="margin: 0; color: var(--text-color);">${escapeHtml(process.codigo)} - ${escapeHtml(process.nombre)}</h3>
+                    <p style="margin: 0; margin-top: 5px; color: var(--text-muted); font-size: 0.85em;">Categoría: ${escapeHtml(process.categoria)}</p>
                 </div>
                 <button class="btn-icon" onclick="document.getElementById('${modalId}').remove()" style="font-size: 1.5rem;">×</button>
             </div>
@@ -228,7 +229,7 @@ function showProcessModal(code = null) {
                     </div>
                     <div>
                         <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Nombre</label>
-                        <input type="text" id="procName" required value="${process ? process.nombre : ''}" style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 6px;">
+                        <input type="text" id="procName" required value="${process ? escapeHtml(process.nombre) : ''}" style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 6px;">
                     </div>
                 </div>
 
@@ -333,7 +334,7 @@ function showProjectsModal() {
     const projectsList = (sampleData.projects || []).map(p => `
         <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; border: 1px solid #eee; border-radius: 6px; margin-bottom: 0.5rem; background: #fff;">
             <div>
-                <strong style="color: var(--text-primary);">${p.nombre}</strong> <span class="text-muted text-xs" style="margin-left: 0.5rem;">(${p.cliente || 'Sin cliente'})</span>
+                <strong style="color: var(--text-primary);">${escapeHtml(p.nombre)}</strong> <span class="text-muted text-xs" style="margin-left: 0.5rem;">(${escapeHtml(p.cliente || 'Sin cliente')})</span>
             </div>
             <button class="btn-icon-small" onclick="deleteProject(${p.id})" title="Eliminar" style="color: #ef4444; background: #fee2e2; border-radius: 4px; padding: 0.25rem 0.5rem; font-size: 0.8rem; border: none; cursor: pointer;">🗑️</button>
         </div>
@@ -437,3 +438,146 @@ async function deleteProject(id) {
         showToast('❌ Error de red al eliminar', 'error');
     }
 }
+
+// --- Import Excel de Procesos (Req 4) ---
+
+function downloadProcessTemplate() {
+    const headers = ['codigo', 'nombre', 'categoria', 'unidad', 'meta_diaria', 'tipo_proceso', 'servicio', 'descripcion_actividad'];
+    const ejemplo = ['BC16', 'Barcode 16 dígitos', 'OPERATIVO', 'unidad', 500, 'Digitalización', 'Servicio A', 'Captura código de barras'];
+
+    const csv = [
+        headers.join(','),
+        ejemplo.map(v => {
+            const s = String(v);
+            return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+        }).join(',')
+    ].join('\n');
+
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'plantilla_procesos.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(a.href);
+}
+
+function showImportProcessModal() {
+    const modalId = 'import-process-modal';
+    let modal = document.getElementById(modalId);
+    if (modal) modal.remove();
+
+    modal = document.createElement('div');
+    modal.id = modalId;
+    modal.className = 'modal-overlay';
+    modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 2000; backdrop-filter: blur(4px);';
+
+    modal.innerHTML = `
+        <div class="modal-content" style="background: white; padding: 2rem; border-radius: 12px; width: 90%; max-width: 600px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); max-height: 90vh; overflow-y: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 1rem; margin-bottom: 1.5rem;">
+                <h3 style="margin: 0;">📥 Importar Procesos desde Excel</h3>
+                <button class="btn-icon" onclick="document.getElementById('${modalId}').remove()" style="font-size: 1.5rem;">×</button>
+            </div>
+
+            <div style="background: #f0f9ff; border: 1px solid #bae6fd; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
+                <p style="margin: 0 0 0.5rem 0; font-weight: 600; color: var(--primary-color);">Formato esperado</p>
+                <p style="margin: 0 0 0.25rem 0; font-size: 0.85rem;">Archivos soportados: <strong>.xlsx, .xls, .csv</strong> (máximo 5 MB)</p>
+                <p style="margin: 0 0 0.5rem 0; font-size: 0.85rem;">La primera fila debe contener los encabezados. Obligatorios: <code>codigo, nombre, categoria, unidad, meta_diaria</code>.</p>
+                <p style="margin: 0; font-size: 0.85rem;">Opcionales: <code>tipo_proceso, servicio, descripcion_actividad</code>. Categoría = <code>OPERATIVO</code> o <code>CUSTODIA</code>.</p>
+                <button type="button" class="btn btn-secondary" style="margin-top: 0.75rem; font-size: 0.8rem; padding: 0.4rem 0.8rem;" onclick="downloadProcessTemplate()">📄 Descargar plantilla</button>
+            </div>
+
+            <form id="importProcessForm" onsubmit="submitProcessImport(event)">
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Archivo</label>
+                    <input type="file" id="importProcessFile" accept=".xlsx,.xls,.csv" required style="width: 100%; padding: 0.5rem; border: 1px dashed #cbd5e1; border-radius: 6px;">
+                </div>
+
+                <div id="importProcessResult" style="display: none; margin-bottom: 1rem;"></div>
+
+                <div style="display: flex; justify-content: flex-end; gap: 1rem; border-top: 1px solid #eee; padding-top: 1.5rem;">
+                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('${modalId}').remove()">Cancelar</button>
+                    <button type="submit" class="btn btn-primary" id="btnSubmitImport">Importar</button>
+                </div>
+            </form>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+}
+
+async function submitProcessImport(e) {
+    e.preventDefault();
+    const fileInput = document.getElementById('importProcessFile');
+    const resultBox = document.getElementById('importProcessResult');
+    const btn = document.getElementById('btnSubmitImport');
+
+    if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+        showToast('⚠️ Selecciona un archivo', 'warning');
+        return;
+    }
+
+    const file = fileInput.files[0];
+    if (file.size > 5 * 1024 * 1024) {
+        showToast('⚠️ El archivo supera los 5 MB permitidos', 'warning');
+        return;
+    }
+
+    const fd = new FormData();
+    fd.append('file', file);
+
+    const originalText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '⌛ Importando...';
+    resultBox.style.display = 'none';
+
+    try {
+        const res = await fetch(`${API_URL}/procesos/import`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${sessionStorage.getItem('authToken')}`,
+                'Accept': 'application/json'
+            },
+            body: fd
+        });
+
+        const data = await res.json().catch(() => ({}));
+
+        if (res.ok) {
+            resultBox.innerHTML = `
+                <div style="background: #f0fdf4; border: 1px solid #86efac; padding: 1rem; border-radius: 8px;">
+                    <strong style="color: #166534;">✅ ${data.message || 'Importación exitosa'}</strong>
+                    <div style="font-size: 0.9rem; margin-top: 0.5rem;">Nuevos: ${data.nuevos ?? 0} · Actualizados: ${data.actualizados ?? 0} · Total: ${data.total ?? 0}</div>
+                </div>
+            `;
+            resultBox.style.display = 'block';
+            showToast(`✅ ${data.total ?? 0} procesos importados`, 'success');
+            if (typeof loadInitialData === 'function') await loadInitialData();
+            if (typeof loadProcesosModule === 'function') loadProcesosModule();
+        } else if (res.status === 429) {
+            showToast('⚠️ Demasiadas importaciones. Intenta en un momento.', 'warning');
+        } else if (res.status === 422 && data.errores && Array.isArray(data.errores)) {
+            const lista = data.errores.slice(0, 10).map(e =>
+                `<li>Fila ${e.fila}: ${(e.mensajes || []).join(' · ')}</li>`
+            ).join('');
+            resultBox.innerHTML = `
+                <div style="background: #fef2f2; border: 1px solid #fca5a5; padding: 1rem; border-radius: 8px;">
+                    <strong style="color: #991b1b;">❌ ${data.message || 'Errores de validación'}</strong>
+                    <ul style="font-size: 0.85rem; margin: 0.5rem 0 0 1rem; padding: 0;">${lista}</ul>
+                    ${data.errores.length > 10 ? `<p style="font-size: 0.8rem; margin-top: 0.5rem;">... y ${data.errores.length - 10} errores más</p>` : ''}
+                </div>
+            `;
+            resultBox.style.display = 'block';
+        } else {
+            showToast('❌ ' + (data.message || 'Error al importar'), 'error');
+        }
+    } catch (err) {
+        console.error(err);
+        showToast('❌ Error de red', 'error');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+    }
+}
+

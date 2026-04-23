@@ -241,6 +241,7 @@
         <a href="#reportes" class="toc-link"><span class="toc-icon">📈</span> Reportes</a>
         <a href="#consolidado" class="toc-link"><span class="toc-icon">🗂️</span> Consolidado</a>
         <a href="#seguimiento" class="toc-link"><span class="toc-icon">🔎</span> Seguimiento</a>
+        <a href="#biometrico" class="toc-link"><span class="toc-icon">🔐</span> Biométrico</a>
         <div class="toc-sep"></div>
         <a href="#rendimiento" class="toc-link"><span class="toc-icon">🧮</span> Cálculo de rendimiento</a>
         <a href="#sesion" class="toc-link"><span class="toc-icon">🔒</span> Seguridad de sesión</a>
@@ -342,7 +343,7 @@
                 <tbody>
                     <tr>
                         <td><strong>Fecha</strong></td>
-                        <td>Día al que corresponde la producción. Por defecto es hoy.</td>
+                        <td>Día al que corresponde la producción. <strong>Para operarios está fija en el día actual</strong> — no se pueden crear ni editar registros de días pasados. El administrador sí puede modificar fechas anteriores.</td>
                         <td><span class="badge-req">Requerido</span></td>
                     </tr>
                     <tr>
@@ -361,9 +362,14 @@
                         <td><span class="badge-req">Requerido</span></td>
                     </tr>
                     <tr>
-                        <td><strong>Tiempo</strong></td>
-                        <td>Tiempo trabajado en formato HH:MM (ej. 08:30 para 8 horas 30 minutos).</td>
+                        <td><strong>Rango de tiempo</strong></td>
+                        <td>Hora de inicio y fin de la actividad. El sistema calcula el tiempo total automáticamente.</td>
                         <td><span class="badge-req">Requerido</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Media jornada</strong></td>
+                        <td>Marca esta casilla si trabajaste solo media jornada (4 horas 30 minutos). El rendimiento se calcula contra 270 minutos en lugar de 540. Aparece con una etiqueta amarilla "½ jornada" en tus registros del día.</td>
+                        <td><span class="badge-opt">Opcional</span></td>
                     </tr>
                     <tr>
                         <td><strong>Cliente</strong></td>
@@ -378,12 +384,28 @@
                 </tbody>
             </table>
 
+            <h3>Modo Tabla Múltiple <span class="role-tag role-all" style="font-size: 0.7rem;">Nuevo</span></h3>
+            <p>Si tuviste varias actividades en el día (por ejemplo, 3 procesos diferentes), puedes registrarlas <strong>todas a la vez</strong> sin tener que llenar el formulario varias veces.</p>
+
+            <ol class="steps">
+                <li><span class="step-num">1</span><span>En el módulo Registro, en la parte superior verás un interruptor <strong>📝 Formulario</strong> / <strong>📋 Tabla múltiple</strong>. Haz clic en <strong>Tabla múltiple</strong>.</span></li>
+                <li><span class="step-num">2</span><span>Verifica que la fecha sea correcta.</span></li>
+                <li><span class="step-num">3</span><span>Para cada actividad, llena una fila: proyecto, proceso, cantidad, hora de inicio, hora de fin y (opcional) si fue media jornada.</span></li>
+                <li><span class="step-num">4</span><span>Haz clic en <strong>➕ Agregar fila</strong> para añadir más actividades. Puedes registrar hasta 50 actividades en un solo envío.</span></li>
+                <li><span class="step-num">5</span><span>Haz clic en <strong>💾 Guardar todas</strong>. Si alguna fila tiene error, se te indicará y ninguna se guardará hasta que lo corrijas.</span></li>
+            </ol>
+
+            <div class="callout callout-info">
+                <span class="callout-icon">💡</span>
+                <span>El sistema guarda todas las filas de forma atómica: o se guardan todas correctamente, o no se guarda ninguna. Así evitas tener registros a medias si algo falla.</span>
+            </div>
+
             <h3>Registro de Novedad</h3>
-            <p>Si el operario no trabajó (permiso, incapacidad, día libre, etc.), se registra una <strong>Novedad</strong> en lugar de producción normal. Selecciona el tipo de novedad correspondiente en el formulario.</p>
+            <p>Si el operario no trabajó (permiso, incapacidad, día libre, etc.), se registra una <strong>Novedad</strong> en lugar de producción normal. Marca la casilla <strong>"Día No Laborado"</strong> y selecciona el tipo de novedad correspondiente.</p>
 
             <div class="callout callout-info">
                 <span class="callout-icon">ℹ️</span>
-                <span>Los administradores pueden registrar producción en nombre de cualquier operario seleccionando el usuario correspondiente en el formulario.</span>
+                <span>Los administradores pueden registrar producción en nombre de cualquier operario y en cualquier fecha. Los operarios solo pueden registrar el día actual.</span>
             </div>
         </section>
 
@@ -426,6 +448,35 @@
             <div class="callout callout-warn">
                 <span class="callout-icon">⚠️</span>
                 <span>La meta diaria es crítica para el cálculo de rendimiento. Verifica que esté correctamente configurada antes de que los operarios empiecen a registrar.</span>
+            </div>
+
+            <h3>Importar procesos desde Excel <span class="role-tag role-admin" style="font-size: 0.7rem;">Nuevo</span></h3>
+            <p>En lugar de crear procesos uno a uno, puedes subir un archivo Excel o CSV con múltiples procesos. El sistema creará los nuevos y actualizará los que ya existan (por código).</p>
+
+            <ol class="steps">
+                <li><span class="step-num">1</span><span>Haz clic en el botón <strong>📥 Importar Excel</strong> en la cabecera del módulo Procesos.</span></li>
+                <li><span class="step-num">2</span><span>(Recomendado) Haz clic en <strong>📄 Descargar plantilla</strong> para obtener un CSV con las columnas esperadas y un ejemplo.</span></li>
+                <li><span class="step-num">3</span><span>Llena el archivo con tus procesos. Los encabezados <strong>obligatorios</strong> son: <code>codigo, nombre, categoria, unidad, meta_diaria</code>.</span></li>
+                <li><span class="step-num">4</span><span>Columnas <strong>opcionales</strong>: <code>tipo_proceso, servicio, descripcion_actividad</code>.</span></li>
+                <li><span class="step-num">5</span><span>Selecciona el archivo y haz clic en <strong>Importar</strong>.</span></li>
+            </ol>
+
+            <table class="field-table">
+                <thead>
+                    <tr><th>Columna</th><th>Valores permitidos</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><code>codigo</code></td><td>Texto único (ej. <code>BC16</code>). Si ya existe, se actualiza.</td></tr>
+                    <tr><td><code>nombre</code></td><td>Descripción del proceso.</td></tr>
+                    <tr><td><code>categoria</code></td><td><code>OPERATIVO</code> o <code>CUSTODIA</code> (en mayúsculas).</td></tr>
+                    <tr><td><code>unidad</code></td><td>Unidad de medida (ej. <code>unidad</code>, <code>caja</code>, <code>hoja</code>).</td></tr>
+                    <tr><td><code>meta_diaria</code></td><td>Número entero mayor a 0.</td></tr>
+                </tbody>
+            </table>
+
+            <div class="callout callout-info">
+                <span class="callout-icon">ℹ️</span>
+                <span>Formatos aceptados: <strong>.xlsx</strong>, <strong>.xls</strong>, <strong>.csv</strong>. Tamaño máximo: <strong>5 MB</strong>. Si hay errores en alguna fila, el sistema te los mostrará y <strong>no importará ninguna fila</strong> hasta que corrijas.</span>
             </div>
         </section>
 
@@ -544,6 +595,78 @@
             </ol>
         </section>
 
+        <!-- ══════════ BIOMÉTRICO ══════════ -->
+        <section class="section" id="biometrico">
+            <div class="section-header">
+                <div class="section-icon">🔐</div>
+                <h2>Biométrico</h2>
+                <span class="role-tag role-admin">Solo Administrador</span>
+            </div>
+
+            <p>Importa el reporte del sistema biométrico y cruza automáticamente las asistencias con los registros de estadística que llenaron los operarios. Te avisa de ausencias no reportadas, inconsistencias y operarios con bajo rendimiento.</p>
+
+            <h3>Paso 1 — Obtener el archivo del biométrico</h3>
+            <p>Desde el software del biométrico, genera el <strong>Reporte Estándar</strong> (típicamente llamado <code>StandardReport</code>) del periodo que necesitas. El archivo es un <strong>.xlsx</strong> que contiene varias hojas: Reporte de Turnos, Reporte Estadístico, Reporte de Asistencia y — la más importante — <strong>Reporte de Excepciones</strong>.</p>
+
+            <div class="callout callout-info">
+                <span class="callout-icon">💡</span>
+                <span>Sube el archivo <strong>completo tal como lo exporta el biométrico</strong>. No necesitas separar hojas ni hacer nada previo. El sistema detecta automáticamente la hoja "Reporte de Excepciones" y procesa solo esa.</span>
+            </div>
+
+            <h3>Paso 2 — Importar al sistema</h3>
+            <ol class="steps">
+                <li><span class="step-num">1</span><span>Entra al módulo <strong>🔐 Biométrico</strong> en el menú lateral (solo visible para administradores).</span></li>
+                <li><span class="step-num">2</span><span>En la sección <strong>📥 Importar archivo biométrico</strong>, haz clic en <strong>Archivo</strong> y selecciona el .xlsx del biométrico.</span></li>
+                <li><span class="step-num">3</span><span>Haz clic en <strong>Importar</strong>. El sistema te mostrará cuántos registros fueron <strong>nuevos</strong>, <strong>actualizados</strong> o <strong>ignorados</strong> (filas sin cédula válida o sin fecha).</span></li>
+            </ol>
+
+            <div class="callout callout-warn">
+                <span class="callout-icon">⚠️</span>
+                <span>Formato: <strong>.xlsx</strong> o <strong>.xls</strong>. Tamaño máximo: <strong>10 MB</strong>. Si el archivo no contiene la hoja "Reporte de Excepciones", la importación se rechaza.</span>
+            </div>
+
+            <h3>Paso 3 — Ver el cruce del día</h3>
+            <p>Después de importar, la sección <strong>🔍 Cruce del día</strong> muestra automáticamente el resultado. Puedes cambiar la fecha para revisar cualquier día ya importado.</p>
+
+            <p>El cruce genera <strong>4 categorías</strong>:</p>
+
+            <table class="field-table">
+                <thead>
+                    <tr><th>Categoría</th><th>Qué significa</th><th>Acción sugerida</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>🚫 Ausencias no reportadas</strong></td>
+                        <td>El biométrico marca al operario como ausente (falta = 540 min) pero no registró novedad en el sistema.</td>
+                        <td>Contactar al operario. Pedir que registre la novedad correspondiente (incapacidad, permiso, etc.).</td>
+                    </tr>
+                    <tr>
+                        <td><strong>⚠️ Inconsistencias</strong></td>
+                        <td>Hay producción registrada pero el biométrico no tiene marcaje, o viceversa.</td>
+                        <td>Verificar si el operario olvidó marcar entrada/salida o si hubo un error en el registro.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>📉 Bajo rendimiento</strong></td>
+                        <td>Operarios con rendimiento del día menor al <strong>80%</strong>.</td>
+                        <td>Revisar con el operario las razones y si procede retroalimentar o ajustar metas.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>👤 Cédulas sin usuario</strong></td>
+                        <td>Cédulas que aparecen en el biométrico pero no coinciden con ningún usuario registrado en el sistema.</td>
+                        <td>Crear el usuario faltante en el módulo <strong>Usuarios</strong> con su cédula correcta, o corregir la cédula si está mal digitada.</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>¿Cómo se cruzan los datos?</h3>
+            <p>El sistema empareja por <strong>cédula</strong>: <code>users.cedula</code> del sistema debe coincidir exactamente con el <strong>ID</strong> del biométrico. Por eso es importante que al crear usuarios se registre bien la cédula (sin puntos, sin espacios, sin ceros extra).</p>
+
+            <div class="callout callout-info">
+                <span class="callout-icon">ℹ️</span>
+                <span>Si re-importas el mismo archivo, los registros existentes se <strong>actualizan</strong> (no se duplican). Puedes importar el reporte varias veces sin riesgo.</span>
+            </div>
+        </section>
+
         <!-- ══════════ RENDIMIENTO ══════════ -->
         <section class="section" id="rendimiento">
             <div class="section-header">
@@ -555,7 +678,7 @@
             <p>El rendimiento mide qué porcentaje de la producción esperada logró el operario, considerando el tiempo real que trabajó ese día.</p>
 
             <div class="formula-box">
-                Rendimiento (%) = ( Cantidad Real / ( (Meta Diaria / 540) × Minutos Trabajados ) ) × 100
+                Rendimiento (%) = ( Cantidad Real / ( (Meta Diaria / Jornada) × Minutos Trabajados ) ) × 100
             </div>
 
             <h3>Variables</h3>
@@ -570,21 +693,33 @@
                     </tr>
                     <tr>
                         <td><strong>Meta Diaria</strong></td>
-                        <td>Producción esperada para una jornada completa de 9 horas (540 minutos), definida por proceso.</td>
+                        <td>Producción esperada para una jornada completa, definida por proceso.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Jornada</strong></td>
+                        <td><strong>540 minutos</strong> (9 horas) por defecto. <strong>270 minutos</strong> (4.5 horas) cuando el registro se marca como <strong>media jornada</strong>.</td>
                     </tr>
                     <tr>
                         <td><strong>Minutos Trabajados</strong></td>
-                        <td>Tiempo efectivo trabajado, convertido a minutos desde el campo Tiempo (HH:MM).</td>
+                        <td>Tiempo efectivo trabajado, convertido a minutos desde el rango de horario registrado.</td>
                     </tr>
                 </tbody>
             </table>
 
-            <h3>Ejemplo</h3>
+            <h3>Ejemplo — Jornada completa</h3>
             <p>Un proceso tiene meta diaria de <strong>600 unidades</strong>. El operario trabajó <strong>6 horas (360 minutos)</strong> y produjo <strong>420 unidades</strong>:</p>
             <div class="formula-box">
                 Producción esperada = (600 / 540) × 360 = 400 unidades<br>
                 Rendimiento = (420 / 400) × 100 = <strong>105%</strong>
             </div>
+
+            <h3>Ejemplo — Media jornada</h3>
+            <p>Mismo proceso con meta diaria de <strong>600 unidades</strong>. El operario trabajó <strong>4 horas (240 minutos)</strong> marcando <strong>media jornada</strong> y produjo <strong>250 unidades</strong>:</p>
+            <div class="formula-box">
+                Producción esperada = (600 / <strong>270</strong>) × 240 = 533 unidades<br>
+                Rendimiento = (250 / 533) × 100 = <strong>46.9%</strong>
+            </div>
+            <p>La diferencia clave: al marcar media jornada, el divisor cambia de <strong>540</strong> a <strong>270</strong>, reflejando que la meta proporcional se calcula sobre una jornada reducida.</p>
 
             <h3>Semáforo de rendimiento</h3>
             <div class="semaforo">

@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests;
 
+use Carbon\Carbon;
+use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 
 class RegistroStoreRequest extends FormRequest
@@ -27,11 +29,29 @@ class RegistroStoreRequest extends FormRequest
             'fecha' => 'required|date',
             'cantidad' => 'required|integer|min:1',
             'tiempo' => ['required', 'string', 'regex:/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/'],
+            'media_jornada' => 'sometimes|boolean',
             'cliente' => 'nullable|string|max:255',
             'observaciones' => 'nullable|string|max:1000',
             'tipo' => 'nullable|in:produccion,novedad_total',
             'novedad_tipo' => 'nullable|string|max:100',
         ];
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $v) {
+            if ($this->user() && $this->user()->rol === 'superadmin') {
+                return;
+            }
+            $fecha = $this->input('fecha');
+            if (!$fecha) {
+                return;
+            }
+            $hoy = Carbon::now('America/Bogota')->toDateString();
+            if ($fecha !== $hoy) {
+                $v->errors()->add('fecha', 'Solo se permite registrar estadísticas del día actual.');
+            }
+        });
     }
 
     /**

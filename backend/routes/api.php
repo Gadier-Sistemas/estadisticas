@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\BiometricoController;
 use App\Http\Controllers\Api\ProcesoController;
 use App\Http\Controllers\Api\RegistroController;
 use App\Http\Controllers\Api\ProyectoController;
@@ -23,6 +24,7 @@ Route::middleware('auth:sanctum')->group(function () {
         // Procesos (CRUD completo - crear/editar/eliminar solo superadmin)
         Route::apiResource('/procesos', ProcesoController::class)->only(['index', 'show']);
         Route::apiResource('/procesos', ProcesoController::class)->except(['index', 'show'])->middleware(['superadmin', 'throttle:30,1']);
+        Route::post('/procesos/import', [ProcesoController::class, 'import'])->middleware(['superadmin', 'throttle:5,1']);
 
         // Proyectos
         Route::apiResource('/proyectos', ProyectoController::class)->only(['index', 'show']);
@@ -31,12 +33,17 @@ Route::middleware('auth:sanctum')->group(function () {
         // Registros
         Route::get('/registros', [RegistroController::class , 'index']);
         Route::post('/registros', [RegistroController::class , 'store'])->middleware('throttle:60,1');
+        Route::post('/registros/batch', [RegistroController::class , 'batch'])->middleware('throttle:30,1');
         Route::put('/registros/{registro}', [RegistroController::class , 'update'])->middleware('throttle:60,1');
         Route::delete('/registros/{registro}', [RegistroController::class , 'destroy'])->middleware('throttle:30,1');
 
         // Dashboard
         Route::get('/dashboard/stats', [DashboardController::class , 'getStats']);
         Route::get('/dashboard/rendimiento', [DashboardController::class , 'getRendimiento']);
+
+        // Biométrico (Solo Superadmin)
+        Route::post('/biometrico/import', [BiometricoController::class, 'import'])->middleware(['superadmin', 'throttle:5,1']);
+        Route::get('/biometrico/cruce', [BiometricoController::class, 'cruce'])->middleware(['superadmin', 'throttle:60,1']);
 
         // Usuarios (Solo Superadmin)
         Route::apiResource('/usuarios', UserController::class)->middleware(['superadmin', 'throttle:30,1']);

@@ -41,7 +41,8 @@ async function syncRegistrations() {
                 codigo: reg.proceso ? (reg.proceso.codigo || reg.proceso.code) : (reg.codigo || reg.code),
                 // Ensure other fields are present
                 cantidad: parseInt(reg.cantidad || 0),
-                tiempo: reg.tiempo || '0:00'
+                tiempo: reg.tiempo || '0:00',
+                media_jornada: reg.media_jornada === true || reg.media_jornada === 1
             }));
 
             updateSampleDataStats();
@@ -108,6 +109,7 @@ async function saveRegistration(regData) {
                 fecha: regData.fecha,
                 cantidad: regData.cantidad,
                 tiempo: regData.tiempo,
+                media_jornada: regData.media_jornada === true,
                 cliente: regData.cliente,
                 observaciones: regData.observaciones,
                 tipo: regData.type,
@@ -146,11 +148,12 @@ function updateSampleDataStats() {
 
         let rendimiento = 0;
         if (!isNovelty && process && reg.tiempo) {
-            // Formula: Cantidad / ((Meta / 540) * TotalMinutos)
+            // Formula: Cantidad / ((Meta / jornadaMin) * TotalMinutos)
             const parts = reg.tiempo.split(':');
             const totalMinutos = (parseInt(parts[0]) * 60) + parseInt(parts[1]);
             const metaDiaria = process.meta_diaria || 0;
-            const produccionEsperada = (metaDiaria / 540) * totalMinutos;
+            const jornadaMin = (reg.media_jornada === true || reg.media_jornada === 1) ? 270 : 540;
+            const produccionEsperada = (metaDiaria / jornadaMin) * totalMinutos;
 
             if (produccionEsperada > 0) {
                 rendimiento = (reg.cantidad / produccionEsperada) * 100;
@@ -244,6 +247,8 @@ function initNavigation() {
                     if (typeof loadConsolidadoModule === 'function') loadConsolidadoModule();
                 } else if (moduleName === 'seguimiento') {
                     if (typeof loadSeguimientoModule === 'function') loadSeguimientoModule();
+                } else if (moduleName === 'biometrico') {
+                    if (typeof loadBiometricoModule === 'function') loadBiometricoModule();
                 }
 
                 // Prepare registration form if selected
