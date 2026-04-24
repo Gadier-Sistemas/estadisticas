@@ -139,11 +139,11 @@ frontend/
 ├── login.html
 ├── manual.html        ← manual de usuario
 └── js/
-    ├── app.js          ← orquestador
+    ├── app.js          ← orquestador (incluye interceptor global 401 → redirige a login)
     ├── utils/calculations.js  (incluye escapeHtml)
     └── components/
         ├── auth.js          (API_URL, login/logout)
-        ├── dashboard.js
+        ├── dashboard.js     (charts con datos reales de /dashboard/stats)
         ├── registro.js      ← Req 3, 5, 7
         ├── procesos.js      ← Req 4 (modal importar)
         ├── usuarios.js
@@ -333,6 +333,9 @@ $$\text{Producción Esperada} = \frac{\text{Meta Diaria}}{\text{Jornada en min}}
 - Excel: `setReadDataOnly(true)` previene evaluación de fórmulas maliciosas.
 - XSS: `escapeHtml()` aplicado en inputs de usuario (observaciones, nombres de proyectos/procesos en options y detalles).
 - Logs: sin PII. Solo `user_id + acción + conteo`.
+- Interceptor global 401 en `frontend/js/app.js`: ante token expirado/inválido limpia `sessionStorage` y redirige a `login.html`.
+- Validación de inputs en `DashboardController::getRendimiento` (`fecha` formato `Y-m-d`, `user_id` exists).
+- Respuestas API homogéneas en `ProyectoController` y `UserController` (POST/PUT devuelven el modelo directo, no envuelto).
 
 ---
 
