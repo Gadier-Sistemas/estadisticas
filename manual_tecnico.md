@@ -47,26 +47,37 @@ Aplicación web para registrar la producción diaria de operarios, calcular rend
 
 ### Backend
 
+**Setup inicial** (solo la primera vez):
+
 Previo: tener MySQL corriendo localmente y la base `db_estadisticas_gadier` creada:
 
 ```sql
 CREATE DATABASE db_estadisticas_gadier CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ```
 
-Luego:
+Luego, desde la raíz del proyecto:
 
 ```bash
 cd backend
-cp .env.example .env         # solo la primera vez
+composer install
+cp .env.example .env
 # Ajustar DB_HOST, DB_USERNAME, DB_PASSWORD en .env si difieren
-php artisan key:generate     # genera APP_KEY
+php artisan key:generate
 php artisan migrate --seed
+```
+
+**Comando para correr el servidor** (cada vez que trabajes):
+
+```bash
+cd backend
 php artisan serve --port=8001
 ```
 
 Deja esta terminal abierta. El API queda en `http://localhost:8001/api`.
 
 ### Frontend
+
+**Comando para correr el servidor** (cada vez que trabajes):
 
 ```bash
 cd frontend
@@ -75,7 +86,7 @@ php -S localhost:8080
 
 En otra terminal. Abre `http://localhost:8080` en el navegador.
 
-> Necesitas **dos terminales** en paralelo.
+> **Importante:** necesitas **dos terminales abiertas en paralelo** — una corriendo el backend (`php artisan serve --port=8001`) y otra el frontend (`php -S localhost:8080`). Si cierras cualquiera, la app deja de funcionar.
 
 ### Variables de entorno clave (`.env`)
 
